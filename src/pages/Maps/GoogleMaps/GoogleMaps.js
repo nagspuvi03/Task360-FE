@@ -14,7 +14,7 @@ const LoadingContainer = () => <div>Loading...</div>
 
 
 const GoogleMaps = (props) => {
-    document.title="Google Maps | Velzon - React Admin & Dashboard Template";
+    document.title="Google Maps | Task360";
     return (
         <React.Fragment>                
                 <div className="page-content">

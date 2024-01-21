@@ -1,26 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import { Card, CardBody, Col, Container, Input, Label, Row, Button, Form, FormFeedback, Alert, Spinner } from 'reactstrap';
-import ParticlesAuth from "../AuthenticationInner/ParticlesAuth";
+import React, { useState, useEffect } from 'react';
+import { Card, Col, Container, Input, Label, Row, Button, Form, FormFeedback, Alert, Spinner } from 'reactstrap';
 import AuthSlider from '../AuthenticationInner/authCarousel';
-
-//redux
-import { useSelector, useDispatch } from "react-redux";
-
-import { Link } from "react-router-dom";
 import withRouter from "../../Components/Common/withRouter";
-// Formik validation
 import * as Yup from "yup";
 import { useFormik } from "formik";
-
-// actions
-import { loginUser, socialLogin, resetLoginFlag } from "../../slices/thunks";
-
-import logoLight from "../../assets/images/logo-light.png";
+import { useDispatch, useSelector } from 'react-redux';
+import { loginUser, resetLoginFlag } from '../../slices/thunks';
 import { createSelector } from 'reselect';
-//import images
+import { useNavigate } from 'react-router-dom';
 
-const Login = (props) => {
+const Login = () => {
     const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const [passwordShow, setPasswordShow] = useState(false);
 
     const selectLayoutState = (state) => state;
     const loginpageData = createSelector(
@@ -32,55 +24,24 @@ const Login = (props) => {
             errorMsg: state.Login.errorMsg,
         })
     );
-    // Inside your component
+
     const {
         user, error, loading, errorMsg
     } = useSelector(loginpageData);
 
-    const [userLogin, setUserLogin] = useState([]);
-    const [passwordShow, setPasswordShow] = useState(false);
-
-
-    useEffect(() => {
-        if (user && user) {
-            const updatedUserData = process.env.REACT_APP_DEFAULTAUTH === "firebase" ? user.multiFactor.user.email : user.email;
-            const updatedUserPassword = process.env.REACT_APP_DEFAULTAUTH === "firebase" ? "" : user.confirm_password;
-            setUserLogin({
-                email: updatedUserData,
-                password: updatedUserPassword
-            });
-        }
-    }, [user]);
-
     const validation = useFormik({
-        // enableReinitialize : use this flag when initial values needs to be changed
-        enableReinitialize: true,
-
         initialValues: {
-            email: userLogin.email || "admin@themesbrand.com" || '',
-            password: userLogin.password || "123456" || '',
+            userId: '',
+            password: '',
         },
         validationSchema: Yup.object({
-            email: Yup.string().required("Please Enter Your Email"),
+            userId: Yup.string().required("Please Enter Your User ID"),
             password: Yup.string().required("Please Enter Your Password"),
         }),
         onSubmit: (values) => {
-            dispatch(loginUser(values, props.router.navigate));
+            dispatch(loginUser(values, navigate));
         }
     });
-
-    const signIn = type => {
-        dispatch(socialLogin(type, props.router.navigate));
-    };
-
-    //handleTwitterLoginResponse
-    // const twitterResponse = e => {}
-
-    //for facebook and google authentication
-    const socialResponse = type => {
-        signIn(type);
-    };
-
 
     useEffect(() => {
         if (errorMsg) {
@@ -89,7 +50,9 @@ const Login = (props) => {
             }, 3000);
         }
     }, [dispatch, errorMsg]);
-    document.title = "Basic SignIn | Task360";
+
+    document.title = "Login | Task360";
+
     return (
         <React.Fragment>
             <div className="auth-page-wrapper auth-bg-cover py-5 d-flex justify-content-center align-items-center min-vh-100">
@@ -108,31 +71,27 @@ const Login = (props) => {
                                                     <h5 className="text-primary">Welcome Back !</h5>
                                                     <p className="text-muted">Sign in to continue to Task360.</p>
                                                 </div>
-                                                {error && error ? (<Alert color="danger"> {error} </Alert>) : null}
+                                                {errorMsg && (<Alert color="danger"> {errorMsg} </Alert>)}
 
                                                 <div className="mt-4">
-                                                    <Form onSubmit={(e) => {
-                                                        e.preventDefault();
-                                                        validation.handleSubmit();
-                                                        return false;
-                                                    }} action="#">
+                                                    <Form onSubmit={validation.handleSubmit}>
 
                                                         <div className="mb-4">
-                                                            <Label htmlFor="email" className="form-label">Email</Label>
+                                                            <Label htmlFor="userId" className="form-label">User ID</Label>
                                                             <Input
-                                                                name='email'
-                                                                type="email" 
+                                                                name='userId'
+                                                                type="text" 
                                                                 className="form-control" 
-                                                                placeholder="Enter email"
+                                                                placeholder="Enter User ID"
                                                                 onChange={validation.handleChange}
                                                                 onBlur={validation.handleBlur}
-                                                                value={validation.values.email || ""}
+                                                                value={validation.values.userId}
                                                                 invalid={
-                                                                    validation.touched.email && validation.errors.email ? true : false
+                                                                    validation.touched.userId && !!validation.errors.userId
                                                                 } 
                                                             />
-                                                            {validation.touched.email && validation.errors.email ? (
-                                                                <FormFeedback type="invalid">{validation.errors.email}</FormFeedback>
+                                                            {validation.touched.userId && validation.errors.userId ? (
+                                                                <FormFeedback type="invalid">{validation.errors.userId}</FormFeedback>
                                                             ) : null}
                                                         </div>
 
@@ -151,7 +110,7 @@ const Login = (props) => {
                                                                     onChange={validation.handleChange}
                                                                     onBlur={validation.handleBlur}
                                                                     invalid={
-                                                                        validation.touched.password && validation.errors.password ? true : false
+                                                                        validation.touched.password && !!validation.errors.password
                                                                     }
                                                                 />
                                                                 {validation.touched.password && validation.errors.password ? (
@@ -162,7 +121,7 @@ const Login = (props) => {
                                                         </div>
 
                                                         <div className="mt-5">
-                                                            <Button color="success" disabled={error ? null : loading ? true : false}  className="btn btn-success w-100" type="submit">
+                                                            <Button color="success" disabled={loading}  className="btn btn-success w-100" type="submit">
                                                                 {loading ? <Spinner size="sm" className='me-2'> Loading... </Spinner> : null}
                                                                 Sign In
                                                             </Button>
@@ -197,4 +156,4 @@ const Login = (props) => {
     );
 };
 
-export default withRouter(Login);
+export default Login;

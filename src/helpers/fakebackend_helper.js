@@ -6,8 +6,8 @@ const api = new APIClient();
 
 // Gets the logged in user data from local session
 export const getLoggedInUser = () => {
-  const user = localStorage.getItem("user");
-  if (user) return JSON.parse(user);
+  const accessToken = localStorage.getItem("authToken");
+  if (token) return { token: accessToken };
   return null;
 };
 

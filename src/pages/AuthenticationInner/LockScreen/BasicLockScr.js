@@ -9,7 +9,7 @@ import avatar1 from "../../../assets/images/users/avatar-1.jpg";
 
 
 const BasicLockScreen = () => {
-    document.title = "Lock Screen | Velzon - React Admin & Dashboard Template";
+    document.title = "Lock Screen | Task360";
     return (
         <React.Fragment>
             <ParticlesAuth>

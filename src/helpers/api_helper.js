@@ -7,7 +7,7 @@ axios.defaults.baseURL = api.API_URL;
 axios.defaults.headers.post["Content-Type"] = "application/json";
 
 // content type
-const token = JSON.parse(sessionStorage.getItem("authUser")) ? JSON.parse(sessionStorage.getItem("authUser")).token : null;
+const token = localStorage.getItem("authToken");
 if (token)
   axios.defaults.headers.common["Authorization"] = "Bearer " + token;
 
@@ -94,11 +94,11 @@ class APIClient {
   };
 }
 const getLoggedinUser = () => {
-  const user = sessionStorage.getItem("authUser");
-  if (!user) {
+  const userToken = localStorage.getItem("authToken");
+  if (!userToken) {
     return null;
   } else {
-    return JSON.parse(user);
+    return { token: userToken }
   }
 };
 

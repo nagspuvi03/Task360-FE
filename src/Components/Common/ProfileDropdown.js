@@ -17,16 +17,29 @@ const ProfileDropdown = () => {
     // Inside your component
     const user = useSelector(profiledropdownData);
 
-    const [userName, setUserName] = useState("Admin");
+    const [userName, setUserName] = useState("");
+    const [userRole, setUserRole] = useState("");
 
     useEffect(() => {
-        if (sessionStorage.getItem("authUser")) {
-            const obj = JSON.parse(sessionStorage.getItem("authUser"));
-            setUserName(process.env.REACT_APP_DEFAULTAUTH === "fake" ? obj.username === undefined ? user.first_name ? user.first_name : obj.data.first_name : "Admin" || "Admin" :
-                process.env.REACT_APP_DEFAULTAUTH === "firebase" ? obj.email && obj.email : "Admin"
-            );
+        if (localStorage.getItem("authToken")) {
+            const storedUserName = localStorage.getItem("userName");
+            setUserName(storedUserName);
+            const storedUserRole = localStorage.getItem("userRole");
+            switch (storedUserRole) {
+            case 'AD':
+                setUserRole('Admin');
+                break;
+            case 'PL':
+                setUserRole('Project Lead');
+                break;
+            case 'PM':
+                setUserRole('Project Member');
+                break;
+            default:
+                setUserRole('User');
+            }
         }
-    }, [userName, user]);
+    }, [user]);
 
     //Dropdown Toggle
     const [isProfileDropdown, setIsProfileDropdown] = useState(false);
@@ -42,7 +55,7 @@ const ProfileDropdown = () => {
                             alt="Header Avatar" />
                         <span className="text-start ms-xl-2">
                             <span className="d-none d-xl-inline-block ms-1 fw-medium user-name-text">{userName}</span>
-                            <span className="d-none d-xl-block ms-1 fs-12 text-muted user-name-sub-text">Founder</span>
+                            <span className="d-none d-xl-block ms-1 fs-12 text-muted user-name-sub-text">{userRole}</span>
                         </span>
                     </span>
                 </DropdownToggle>
@@ -55,18 +68,6 @@ const ProfileDropdown = () => {
                         </Link>
                     </DropdownItem>
                     <DropdownItem className='p-0'>
-                        <Link to={process.env.PUBLIC_URL + "/apps-chat"} className="dropdown-item">
-                            <i className="mdi mdi-message-text-outline text-muted fs-16 align-middle me-1"></i> <span
-                                className="align-middle">Messages</span>
-                        </Link>
-                    </DropdownItem>
-                    <DropdownItem className='p-0'>
-                        <Link to={"#"} className="dropdown-item">
-                            <i className="mdi mdi-calendar-check-outline text-muted fs-16 align-middle me-1"></i> <span
-                                className="align-middle">Taskboard</span>
-                        </Link>
-                    </DropdownItem>
-                    <DropdownItem className='p-0'>
                         <Link to={process.env.PUBLIC_URL + "/pages-faqs"} className="dropdown-item">
                             <i
                                 className="mdi mdi-lifebuoy text-muted fs-16 align-middle me-1"></i> <span
@@ -75,24 +76,11 @@ const ProfileDropdown = () => {
                     </DropdownItem>
                     <div className="dropdown-divider"></div>
                     <DropdownItem className='p-0'>
-                        <Link to={process.env.PUBLIC_URL + "/pages-profile"} className="dropdown-item">
-                            <i
-                                className="mdi mdi-wallet text-muted fs-16 align-middle me-1"></i> <span
-                                    className="align-middle">Balance : <b>$5971.67</b></span>
-                        </Link>
-                    </DropdownItem >
-                    <DropdownItem className='p-0'>
                         <Link to={process.env.PUBLIC_URL + "/pages-profile-settings"} className="dropdown-item">
                             <span
                                 className="badge bg-success-subtle text-success mt-1 float-end">New</span><i
                                     className="mdi mdi-cog-outline text-muted fs-16 align-middle me-1"></i> <span
                                         className="align-middle">Settings</span>
-                        </Link>
-                    </DropdownItem>
-                    <DropdownItem className='p-0'>
-                        <Link to={process.env.PUBLIC_URL + "/auth-lockscreen-basic"} className="dropdown-item">
-                            <i
-                                className="mdi mdi-lock text-muted fs-16 align-middle me-1"></i> <span className="align-middle">Lock screen</span>
                         </Link>
                     </DropdownItem>
                     <DropdownItem className='p-0'>

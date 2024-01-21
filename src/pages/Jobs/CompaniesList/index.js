@@ -16,7 +16,7 @@ import img6 from "../../../assets/images/companies/img-6.png";
 import { jobCompanies } from "../../../common/data/appsJobs";
 import Pagination from "../../../Components/Common/Pagination";
 const CompaniesList = () => {
-  document.title = "Companies | Velzon - React Admin & Dashboard Template";
+  document.title = "Companies | Task360";
 
   const [companiesList, setCompaniesList] = useState();
   const [currentPage, setCurrentPage] = useState(1);

@@ -103,7 +103,7 @@ const EcommerceSellers = () => {
     setSellerList(filter);
   };
 
-  document.title = "Sellers | Velzon - React Admin & Dashboard Template";
+  document.title = "Sellers | Task360";
   return (
     <React.Fragment>
       <div className="page-content">

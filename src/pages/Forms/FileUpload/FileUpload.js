@@ -41,7 +41,7 @@ const FileUpload = () => {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
   }
-  document.title ="File Upload | Velzon - React Admin & Dashboard Template";
+  document.title ="File Upload | Task360";
   return (
     <React.Fragment>
       <div className="page-content">

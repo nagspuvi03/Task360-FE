@@ -31,7 +31,7 @@ const RemixIcons = () => {
     document.getElementById("all-icon").innerHTML = iconData;
   });
 
-document.title ="Remix Icons | Velzon - React Admin & Dashboard Template";
+document.title ="Remix Icons | Task360";
   return (
     <React.Fragment>
       <div className="page-content">

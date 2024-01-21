@@ -8,7 +8,7 @@ import { nftArtworkData, tradingArtworkData, popularCreatorsNFT, marketPlacewidg
 import BgPattern from "../../../assets/images/nft/bg-pattern.png";
 
 const Marketplace = () => {
-    document.title = "Marketplace | Velzon - React Admin & Dashboard Template";
+    document.title = "Marketplace | Task360";
 
     const favouriteBtn = (ele) => {
         if (ele.closest("button").classList.contains("active")) {

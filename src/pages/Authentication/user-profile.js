@@ -30,7 +30,7 @@ import { createSelector } from "reselect";
 const UserProfile = () => {
   const dispatch = useDispatch();
 
-  const [email, setemail] = useState("admin@gmail.com");
+  const [email, setemail] = useState("");
   const [idx, setidx] = useState("1");
 
   const [userName, setUserName] = useState("Admin");
@@ -54,18 +54,19 @@ const UserProfile = () => {
 
 
   useEffect(() => {
-    if (sessionStorage.getItem("authUser")) {
-      const obj = JSON.parse(sessionStorage.getItem("authUser"));
+    if (localStorage.getItem("authToken")) {
+      const token = localStorage.getItem("authToken");
+      const userName = localStorage.getItem("username");
+      const userEmail = localStorage.getItem("userEmail");
+      const userId = localStorage.getItem("userId");
 
       if (!isEmpty(user)) {
-        obj.data.first_name = user.first_name;
-        sessionStorage.removeItem("authUser");
-        sessionStorage.setItem("authUser", JSON.stringify(obj));
+        localStorage.setItem("authToken", token);
       }
 
-      setUserName(obj.data.first_name);
-      setemail(obj.data.email);
-      setidx(obj.data._id || "1");
+      setUserName(userName);
+      setemail(userEmail);
+      setidx(userId || "1");
 
       setTimeout(() => {
         dispatch(resetProfileFlag());
@@ -76,12 +77,9 @@ const UserProfile = () => {
 
 
   const validation = useFormik({
-    // enableReinitialize : use this flag when initial values needs to be changed
-    enableReinitialize: true,
-
     initialValues: {
-      first_name: userName || 'Admin',
-      idx: idx || '',
+      first_name: '',
+      idx: '',
     },
     validationSchema: Yup.object({
       first_name: Yup.string().required("Please Enter Your UserName"),
@@ -91,7 +89,7 @@ const UserProfile = () => {
     }
   });
 
-  document.title = "Profile | Velzon - React Admin & Dashboard Template";
+  document.title = "Profile | Task360";
   return (
     <React.Fragment>
       <div className="page-content mt-lg-5">
@@ -114,8 +112,8 @@ const UserProfile = () => {
                     <div className="flex-grow-1 align-self-center">
                       <div className="text-muted">
                         <h5>{userName || "Admin"}</h5>
-                        <p className="mb-1">Email Id : {email}</p>
-                        <p className="mb-0">Id No : #{idx}</p>
+                        <p className="mb-1">Email ID : {email}</p>
+                        <p className="mb-0">User ID : {idx}</p>
                       </div>
                     </div>
                   </div>

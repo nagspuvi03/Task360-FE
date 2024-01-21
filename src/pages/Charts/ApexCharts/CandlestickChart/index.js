@@ -12,7 +12,7 @@ import {
 
 
 const CandlestickChart = () => {
-    document.title = "Candlestick Charts | Velzon - React Admin & Dashboard Template";
+    document.title = "Candlestick Charts | Task360";
     return (
         <React.Fragment>
             <div className="page-content">

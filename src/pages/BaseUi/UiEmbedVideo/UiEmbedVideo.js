@@ -11,7 +11,7 @@ import { Ratio169Example, Ratio219Example, Ratio43Example, Ratio11Example, Custo
 
 
 const UiEmbedVideo = () => {
-    document.title="Embed Video | Velzon - React Admin & Dashboard Template";
+    document.title="Embed Video | Task360";
     return (
         <React.Fragment>
             <UiContent />

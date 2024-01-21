@@ -1,56 +1,37 @@
 //Include Both Helper File with needed methods
 import { getFirebaseBackend } from "../../../helpers/firebase_helper";
-import {
-  postFakeLogin,
-  postJwtLogin,
-  postSocialLogin,
-} from "../../../helpers/fakebackend_helper";
 
 import { loginSuccess, logoutUserSuccess, apiError, reset_login_flag } from './reducer';
+import axios from "axios";
 
-export const loginUser = (user, history) => async (dispatch) => {
+export const loginUser = (user, navigate) => async (dispatch) => {
   try {
-    let response;
-    if (process.env.REACT_APP_DEFAULTAUTH === "firebase") {
-      let fireBaseBackend = getFirebaseBackend();
-      response = fireBaseBackend.loginUser(
-        user.email,
-        user.password
-      );
-    } else if (process.env.REACT_APP_DEFAULTAUTH === "jwt") {
-      response = postJwtLogin({
-        email: user.email,
-        password: user.password
-      });
+    const response = await axios.post('http://task360.osc-fr1.scalingo.io/task-360/api/v1/auth/login', {
+      userId: user.userId,
+      password: user.password
+    });
 
-    } else if (process.env.REACT_APP_DEFAULTAUTH) {
-      response = postFakeLogin({
-        email: user.email,
-        password: user.password,
-      });
-    }
+    const data = response;
 
-    var data = await response;
-
-    if (data) {
-      sessionStorage.setItem("authUser", JSON.stringify(data));
-      if (process.env.REACT_APP_DEFAULTAUTH === "fake") {
-        var finallogin = JSON.stringify(data);
-        finallogin = JSON.parse(finallogin)
-        data = finallogin.data;
-        if (finallogin.status === "success") {
-          dispatch(loginSuccess(data));
-          history('/dashboard')
-        } else {
-          dispatch(apiError(finallogin));
-        }
-      } else {
-        dispatch(loginSuccess(data));
-        history('/dashboard')
-      }
+    if (data.token) {
+      localStorage.setItem('authToken', data.token);
+      localStorage.setItem('userName', data.userName);
+      localStorage.setItem('userEmail', data.email);
+      localStorage.setItem('userId', data.userId);
+      localStorage.setItem('userRole', data.role);
+      dispatch(loginSuccess(data));
+      navigate('/dashboard');
     }
   } catch (error) {
-    dispatch(apiError(error));
+    let errorMessage = 'Login failed. Please try again.';
+    if(error.response && error.response.data && error.response.data.message) {
+      errorMessage = error.response.data.message;
+    } else if(error.response && error.response.status) {
+      errorMessage = 'Request failed. Please try again later.'
+    } else if(error.message) {
+      errorMessage= error.message;
+    }
+    dispatch(apiError({ data: errorMessage }));
   }
 };
 

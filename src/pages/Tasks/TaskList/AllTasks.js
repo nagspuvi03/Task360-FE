@@ -94,7 +94,9 @@ const AllTasks = () => {
   };
 
   useEffect(() => {
-    setTaskList(taskList);
+    if(taskList && taskList.length) {
+      setTaskList(taskList || []);
+    }
   }, [taskList]);
 
   // Delete Data
@@ -436,10 +438,10 @@ const AllTasks = () => {
               </div>
             </div>
             <div className="card-body pt-0">
-              {isTaskSuccess && taskList.length ? (
+              {isTaskSuccess && TaskList && TaskList.length > 0 ? (
                 <TableContainer
                   columns={columns}
-                  data={(TaskList || [])}
+                  data={taskList}
                   isGlobalFilter={true}
                   isAddUserList={false}
                   customPageSize={8}
