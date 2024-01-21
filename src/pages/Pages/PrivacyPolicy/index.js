@@ -5,7 +5,7 @@ import BreadCrumb from "../../../Components/Common/BreadCrumb";
 import FeatherIcon from "feather-icons-react";
 
 const PrivacyPolicy = () => {
-  document.title = "Privacy Policy | Velzon - React Admin & Dashboard Template";
+  document.title = "Privacy Policy | Task360";
   return (
     <React.Fragment>
       <div className="page-content">

@@ -76,16 +76,6 @@ import {
   apiKey
 } from "../../common/data";
 
-let users = [
-  {
-    uid: 1,
-    username: "admin",
-    role: "admin",
-    password: "123456",
-    email: "admin@themesbrand.com",
-  },
-];
-
 const fakeBackend = () => {
   // This sets the mock adapter on the default instance
   const mock = new MockAdapter(axios, { onNoMatch: "passthrough" });
@@ -102,28 +92,20 @@ const fakeBackend = () => {
   });
 
   mock.onPost("/post-jwt-login").reply(config => {
-    const user = JSON.parse(config["data"]);
-    const validUser = users.filter(
-      usr => usr.email === user.email && usr.password === user.password
-    );
+    const userCredentials = JSON.parse(config["data"]);
+    
+    const token = Math.random().toString(36).substring(7);
 
-    return new Promise((resolve, reject) => {
+    const response = {
+      userId: userCredentials.userId,
+      token: token
+    }
+    
+    localStorage.setItem("authToken", token);
+
+    return new Promise((resolve) => {
       setTimeout(() => {
-        if (validUser["length"] === 1) {
-          // You have to generate AccessToken by jwt. but this is fakeBackend so, right now its dummy
-          const token = accessToken;
-
-          // JWT AccessToken
-          const tokenObj = { accessToken: token }; // Token Obj
-          const validUserObj = { ...validUser[0], ...tokenObj }; // validUser Obj
-
-          resolve([200, validUserObj]);
-        } else {
-          reject([
-            400,
-            "Username and password are invalid. Please enter correct username and password",
-          ]);
-        }
+        resolve([200, response]);
       });
     });
   });

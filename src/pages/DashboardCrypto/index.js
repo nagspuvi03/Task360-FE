@@ -13,7 +13,7 @@ import Widgets1 from './Widgets1';
 
 
 const DashboardCrypto = () => {
-    document.title="Crypto Dashboard | Velzon - React Admin & Dashboard Template";
+    document.title="Crypto Dashboard | Task360";
     return (
         <React.Fragment>
             <div className="page-content">

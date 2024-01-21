@@ -55,7 +55,7 @@ const FormPickers = () => {
     setcolor(c1);
   };
 
-  document.title = "Pickers | Velzon - React Admin & Dashboard Template";
+  document.title = "Pickers | Task360";
 
   return (
     <React.Fragment>

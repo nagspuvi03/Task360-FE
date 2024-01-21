@@ -10,7 +10,7 @@ import {
 
 
 const ScatterCharts = () => {
-    document.title="Scatter Charts | Velzon - React Admin & Dashboard Template";
+    document.title="Scatter Charts | Task360";
     return (
         <React.Fragment>
             <div className="page-content">

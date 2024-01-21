@@ -6,7 +6,7 @@ import Widgets from './Widgets';
 
 
 const TaskList = () => {
-    document.title="Tasks List | Velzon - React Admin & Dashboard Template";
+    document.title="Tasks List | Task360";
     return (
         <React.Fragment>
             <div className="page-content">

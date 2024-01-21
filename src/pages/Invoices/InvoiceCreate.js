@@ -115,7 +115,7 @@ const InvoiceCreate = () => {
 
 
 
-  document.title = "Create Invoice | Velzon - React Admin & Dashboard Template";
+  document.title = "Create Invoice | Task360";
 
   const validation = useFormik({
     enableReinitialize: true,

@@ -21,7 +21,7 @@ const useProfile = () => {
   }, []);
 
 
-  return { userProfile, loading,token };
+  return { userProfile,loading,token };
 };
 
 export { useProfile };

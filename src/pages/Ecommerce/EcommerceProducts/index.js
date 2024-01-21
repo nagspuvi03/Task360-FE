@@ -310,7 +310,7 @@ const products = useSelector(selectecomproductData);
   ],
     []
   );
-  document.title = "Products | Velzon - React Admin & Dashboard Template";
+  document.title = "Products | Task360";
 
   return (
     <div className="page-content">

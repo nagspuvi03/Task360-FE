@@ -9,7 +9,7 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 
 const CoverSignUp = () => {
-    document.title = "Cover SignUp | Velzon - React Admin & Dashboard Template";
+    document.title = "Cover SignUp | Task360";
 
     const [passwordShow, setPasswordShow] = useState(false);
 

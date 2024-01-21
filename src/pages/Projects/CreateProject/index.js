@@ -59,7 +59,7 @@ const CreateProject = () => {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
     }
 
-document.title="Create Project | Velzon - React Admin & Dashboard Template";
+document.title="Create Project | Task360";
 
     return (
         <React.Fragment>
@@ -342,7 +342,6 @@ document.title="Create Project | Velzon - React Admin & Dashboard Template";
                                                 </div>
                                                 <div className="flex-shrink-0">
                                                     <div className="d-flex align-items-center gap-1">
-                                                        <button type="button" className="btn btn-light btn-sm">Message</button>
                                                         <UncontrolledDropdown>
                                                             <DropdownToggle tag="button" className="btn btn-icon btn-sm fs-16 text-muted dropdown">
                                                                 <i className="ri-more-fill"></i>

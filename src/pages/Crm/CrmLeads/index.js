@@ -420,7 +420,7 @@ const CrmLeads = () => {
     setDate(joinDate);
   };
 
-  document.title = "Leads | Velzon - React Admin & Dashboard Template";
+  document.title = "Leads | Task360";
 
   return (
     <React.Fragment>

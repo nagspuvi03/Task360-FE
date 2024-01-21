@@ -12,7 +12,7 @@ import { DefaultButtonsExample, OutlineButtonsExample, RoundedButtonsExample, So
 
 
 const UiButtons = () => {
-    document.title = "Buttons | Velzon - React Admin & Dashboard Template";
+    document.title = "Buttons | Task360";
 
     const favouriteBtn = (ele) => {
         if (ele.closest("button").classList.contains("active")) {

@@ -46,7 +46,7 @@ import "filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css";
 registerPlugin(FilePondPluginImageExifOrientation, FilePondPluginImagePreview);
 
 const EcommerceAddProduct = (props) => {
-  document.title = "Create Product | Velzon - React Admin & Dashboard Template";
+  document.title = "Create Product | Task360";
 
   const history = useNavigate();
   const dispatch = useDispatch();

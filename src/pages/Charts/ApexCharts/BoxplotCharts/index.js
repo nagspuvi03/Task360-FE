@@ -10,7 +10,7 @@ import {
 
 
 const BoxplotCharts = () => {
-    document.title = "Boxplot Charts | Velzon - React Admin & Dashboard Template";
+    document.title = "Boxplot Charts | Task360";
     return (
         <React.Fragment>
             <div className="page-content">

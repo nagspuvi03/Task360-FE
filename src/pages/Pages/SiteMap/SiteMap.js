@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 
 
 const SiteMap = () => {
-    document.title="SiteMap | Velzon - React Admin & Dashboard Template";
+    document.title="SiteMap | Task360";
     return (
         <div>
             <div className="page-content">

@@ -190,7 +190,7 @@ const UiTabs = () => {
         }
     };
 
-    document.title = "Tabs | Velzon - React Admin & Dashboard Template";
+    document.title = "Tabs | Task360";
 
     return (
         <React.Fragment>

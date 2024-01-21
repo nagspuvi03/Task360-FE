@@ -13,7 +13,7 @@ import LayerGroup from "./MapsLeaflet/LayerGroup";
 import MapLayerControl from "./MapsLeaflet/MapLayerControl";
 
 const LeafletMaps = () => {
-document.title ="Leaflet Maps | Velzon - React Admin & Dashboard Template";
+document.title ="Leaflet Maps | Task360";
     return (
         <React.Fragment>            
             <div className="page-content">

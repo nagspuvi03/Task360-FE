@@ -63,7 +63,7 @@ const UiOffcanvas = () => {
         setIsScrollBackDrop(!isScrollBackDrop);
     };
 
-    document.title="Offcanvas | Velzon - React Admin & Dashboard Template";
+    document.title="Offcanvas | Task360";
 
     return (
         <React.Fragment>

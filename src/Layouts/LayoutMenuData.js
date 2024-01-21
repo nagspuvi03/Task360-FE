@@ -135,7 +135,9 @@ const Navdata = () => {
     isMultiLevel,
   ]);
 
-  const menuItems = [
+  const userRole = localStorage.getItem('userRole');
+
+  const adminMenuItems = [
     {
       label: "Menu",
       isHeader: true,
@@ -231,6 +233,152 @@ const Navdata = () => {
       }
     }
   ];
+
+  const projectLeadMenuItems = [
+    {
+      label: "Menu",
+      isHeader: true,
+    },
+    {
+      id: "dashboard",
+      label: "Dashboards",
+      icon: "ri-dashboard-2-line",
+      link: "/#",
+      stateVariables: isDashboard,
+      click: function (e) {
+        e.preventDefault();
+        setIsDashboard(!isDashboard);
+        setIscurrentState("Dashboard");
+        updateIconSidebar(e);
+      },
+      subItems: [
+        {
+          id: "projects",
+          label: "Projects",
+          link: "/dashboard-projects",
+          parentId: "dashboard",
+        },
+      ],
+    },
+    {
+      id: "appsprojects",
+      label: "Projects",
+      icon: "ri-apps-2-line",
+      link: "/#",
+      click: function (e) {
+        e.preventDefault();
+        setIsProjects(!isProjects);
+      },
+      stateVariables: isProjects,
+      subItems: [
+        {
+          id: 1,
+          label: "List",
+          link: "/apps-projects-list",
+          parentId: "appsprojects",
+        },
+        {
+          id: 2,
+          label: "Overview",
+          link: "/apps-projects-overview",
+          parentId: "appsprojects",
+        },
+        {
+          id: 3,
+          label: "Create Project",
+          link: "/apps-projects-create",
+          parentId: "appsprojects",
+        },
+      ],
+    },
+    {
+      id: "tasks",
+      label: "Tasks",
+      icon: "ri-apps-2-line",
+      link: "/#",
+      click: function (e) {
+        e.preventDefault();
+        setIsTasks(!isTasks);
+      },
+      stateVariables: isTasks,
+      subItems: [
+        {
+          id: 1,
+          label: "List View",
+          link: "/apps-tasks-list-view",
+          parentId: "apps",
+        },
+        {
+          id: 2,
+          label: "Task Details",
+          link: "/apps-tasks-details",
+          parentId: "apps",
+        },
+      ],
+    }
+  ];
+
+  const projectMemberMenuItems = [
+    {
+      label: "Menu",
+      isHeader: true,
+    },
+    {
+      id: "dashboard",
+      label: "Dashboards",
+      icon: "ri-dashboard-2-line",
+      link: "/#",
+      stateVariables: isDashboard,
+      click: function (e) {
+        e.preventDefault();
+        setIsDashboard(!isDashboard);
+        setIscurrentState("Dashboard");
+        updateIconSidebar(e);
+      },
+      subItems: [
+        {
+          id: "projects",
+          label: "Projects",
+          link: "/dashboard-projects",
+          parentId: "dashboard",
+        },
+      ],
+    },
+    {
+      id: "tasks",
+      label: "Tasks",
+      icon: "ri-apps-2-line",
+      link: "/#",
+      click: function (e) {
+        e.preventDefault();
+        setIsTasks(!isTasks);
+      },
+      stateVariables: isTasks,
+      subItems: [
+        {
+          id: 1,
+          label: "List View",
+          link: "/apps-tasks-list-view",
+          parentId: "apps",
+        },
+        {
+          id: 2,
+          label: "Task Details",
+          link: "/apps-tasks-details",
+          parentId: "apps",
+        },
+      ],
+    }
+  ];
+
+  const roleBasedMenuItems = {
+    AD: adminMenuItems,
+    PL: projectLeadMenuItems,
+    PM: projectMemberMenuItems
+  }
+
+  const menuItems = roleBasedMenuItems[userRole] || [];
   return <React.Fragment>{menuItems}</React.Fragment>;
 };
+
 export default Navdata;

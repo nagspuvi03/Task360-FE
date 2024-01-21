@@ -5,7 +5,7 @@ import BreadCrumb from '../../../Components/Common/BreadCrumb';
 
 
 const LineAwesomeIcons = () => {
-    document.title="Line Awesome Icons | Velzon - React Admin & Dashboard Template";
+    document.title="Line Awesome Icons | Task360";
     return (
         <React.Fragment>
             <div className="page-content">
