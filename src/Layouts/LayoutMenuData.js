@@ -135,7 +135,7 @@ const Navdata = () => {
     isMultiLevel,
   ]);
 
-  const userRole = localStorage.getItem('userRole');
+  const userRole = sessionStorage.getItem('userRole');
 
   const adminMenuItems = [
     {

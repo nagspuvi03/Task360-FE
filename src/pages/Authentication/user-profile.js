@@ -54,14 +54,14 @@ const UserProfile = () => {
 
 
   useEffect(() => {
-    if (localStorage.getItem("authToken")) {
-      const token = localStorage.getItem("authToken");
-      const userName = localStorage.getItem("username");
-      const userEmail = localStorage.getItem("userEmail");
-      const userId = localStorage.getItem("userId");
+    if (sessionStorage.getItem("authToken")) {
+      const token = sessionStorage.getItem("authToken");
+      const userName = sessionStorage.getItem("username");
+      const userEmail = sessionStorage.getItem("userEmail");
+      const userId = sessionStorage.getItem("userId");
 
       if (!isEmpty(user)) {
-        localStorage.setItem("authToken", token);
+        sessionStorage.setItem("authToken", token);
       }
 
       setUserName(userName);

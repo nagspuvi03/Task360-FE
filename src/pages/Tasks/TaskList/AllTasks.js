@@ -7,262 +7,283 @@ import SimpleBar from 'simplebar-react';
 
 //Import Flatepicker
 import Flatpickr from "react-flatpickr";
-
-//redux
-import { useSelector, useDispatch } from "react-redux";
 import { Col, Modal, ModalBody, Row, Label, Input, Button, ModalHeader, FormFeedback, Form } from 'reactstrap';
 
 import {
-  getTaskList,
-  addNewTask,
-  updateTask,
-  deleteTask,
-} from "../../../slices/thunks";
-
-import {
   OrdersId,
-  Project,
-  CreateBy,
-  DueDate,
-  Status,
-  Priority
+  handleValidDate
 } from "./TaskListCol";
 
-// Formik
-import * as Yup from "yup";
-import { useFormik } from "formik";
-import { isEmpty } from "lodash";
 import { Link } from 'react-router-dom';
-
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import Loader from "../../../Components/Common/Loader";
-import { createSelector } from 'reselect';
-
-const Assigned = [
-  { id: 1, imgId: "anna-adame", img: "avatar-1.jpg", name: "Anna Adame" },
-  { id: 2, imgId: "frank-hook", img: "avatar-3.jpg", name: "Frank Hook" },
-  { id: 3, imgId: "alexis-clarke", img: "avatar-6.jpg", name: "Alexis Clarke" },
-  { id: 4, imgId: "herbert-stokes", img: "avatar-2.jpg", name: "Herbert Stokes" },
-  { id: 5, imgId: "michael-morris", img: "avatar-7.jpg", name: "Michael Morris" },
-  { id: 6, imgId: "nancy-martino", img: "avatar-5.jpg", name: "Nancy Martino" },
-  { id: 7, imgId: "thomas-taylor", img: "avatar-8.jpg", name: "Thomas Taylor" },
-  { id: 8, imgId: "tonya-noble", img: "avatar-10.jpg", name: "Tonya Noble" },
-];
+import moment from 'moment';
 
 const AllTasks = () => {
-  const dispatch = useDispatch();
-
-  const selectLayoutState = (state) => state.Tasks;
-  const selectLayoutProperties = createSelector(
-    selectLayoutState,
-    (state) => ({
-      taskList: state.taskList,
-      isTaskSuccess: state.isTaskSuccess,
-      error: state.error,
-    })
-  );
-  // Inside your component
-  const {
-    taskList, isTaskSuccess, error
-  } = useSelector(selectLayoutProperties);
-
-
   const [isEdit, setIsEdit] = useState(false);
-  const [task, setTask] = useState([]);
-  const [TaskList, setTaskList] = useState([]);
-
-  // Delete Task
-  const [deleteModal, setDeleteModal] = useState(false);
-  const [deleteModalMulti, setDeleteModalMulti] = useState(false);
+  const [TaskList, setTaskList] = useState([
+    {
+        id: 1,
+        taskId: "#VLZ632",
+        project: "Task360",
+        task: "Error message when placing an orders?",
+        customer: "Akranta",
+        function: "Office",
+        assigned: "Yes",
+        taskType: "Project",
+        dueDate: "25 Jan, 2022",
+        status: "Not Completed",
+        priority: "High",
+        responsibility: "Nagappan",
+        active: "Active",
+        logDate: "28 Jan, 2022",
+        statusDate: "27 Jan, 2022",
+        timeTaken: 36,
+        remarks: "Good"
+    },
+    {
+        id: 2,
+        taskId: "#VLZ453",
+        project: "Task360",
+        task: "Profile Page Structure",
+        customer: "Akranta",
+        function: "Mechanical",
+        assigned: "Yes",
+        taskType: "Direct",
+        dueDate: "20 Dec, 2021",
+        status: "Pending",
+        priority: "Low",
+        responsibility: "Purushoth",
+        active: "Active",
+        logDate: "28 Jan, 2022",
+        statusDate: "27 Jan, 2022",
+        timeTaken: 36,
+        remarks: "Good"
+    },
+    {
+        id: 3,
+        taskId: "#VLZ454",
+        project: "Task360",
+        task: "Profile Page Structure",
+        customer: "Akranta",
+        function: "Electrical",
+        assigned: "Yes",
+        taskType: "Project",
+        dueDate: "20 Dec, 2021",
+        status: "Accepted",
+        priority: "Low",
+        responsibility: "Purushoth",
+        active: "Active",
+        logDate: "28 Jan, 2022",
+        statusDate: "27 Jan, 2022",
+        timeTaken: 36,
+        remarks: "Good"
+    },
+    {
+        id: 4,
+        taskId: "#VLZ455",
+        project: "Task360",
+        task: "Profile Page Structure",
+        customer: "Akranta",
+        function: "General",
+        assigned: "No",
+        taskType: "Project",
+        dueDate: "20 Dec, 2021",
+        status: "Closed",
+        priority: "Medium",
+        responsibility: "Purushoth",
+        active: "Inactive",
+        logDate: "28 Jan, 2022",
+        statusDate: "27 Jan, 2022",
+        timeTaken: 36,
+        remarks: "Good"
+    },
+  ]);
   const [modal, setModal] = useState(false);
+  const [editableRowId, setEditableRowId] = useState(null);
+  const [originalRowData, setOriginalRowData] = useState({});
+  const [editedRowData, setEditedRowData] = useState({});
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState(null);
+  const [lastId, setLastId] = useState(4);
+  const [lastTaskId, setLastTaskId] = useState(0);
+  const [newTaskIds, setNewTaskIds] = useState([]);
 
   const toggle = useCallback(() => {
-    if (modal) {
-      setModal(false);
-      setTask(null);
-    } else {
-      setModal(true);
-      setDate(defaultdate());
-    }
+      setModal(!modal);
   }, [modal]);
 
-  // Delete Data
-  const onClickDelete = (task) => {
-    setTask(task);
-    setDeleteModal(true);
-  };
-
-  useEffect(() => {
-    if(taskList && taskList.length) {
-      setTaskList(taskList || []);
-    }
-  }, [taskList]);
-
-  // Delete Data
-  const handleDeleteTask = () => {
-    if (task) {
-      dispatch(deleteTask(task._id));
-      setDeleteModal(false);
-    }
-  };
-
-  // validation
-  const validation = useFormik({
-    // enableReinitialize : use this flag when initial values needs to be changed
-    enableReinitialize: true,
-
-    initialValues: {
-      taskId: (task && task.taskId) || '',
-      project: (task && task.project) || '',
-      task: (task && task.task) || '',
-      creater: (task && task.creater) || '',
-      dueDate: (task && task.dueDate) || '',
-      status: (task && task.status) || 'New',
-      priority: (task && task.priority) || 'High',
-      subItem: (task && task.subItem) || [],
-    },
-    validationSchema: Yup.object({
-      taskId: Yup.string().required("Please Enter Task Id"),
-      project: Yup.string().required("Please Enter Project Name"),
-      task: Yup.string().required("Please Enter Your Task"),
-      creater: Yup.string().required("Please Enter Creater Name"),
-      // dueDate: Yup.string().required("Please Enter Due Date"),
-      status: Yup.string().required("Please Enter Status"),
-      priority: Yup.string().required("Please Enter Priority"),
-      subItem: Yup.array().required("Please Enter")
-    }),
-    onSubmit: (values) => {
-      if (isEdit) {
-        const updatedTask = {
-          _id: task ? task._id : 0,
-          taskId: values.taskId,
-          project: values.project,
-          task: values.task,
-          creater: values.creater,
-          dueDate: date,
-          status: values.status,
-          priority: values.priority,
-          subItem: values.subItem,
+  const updateMyData = (rowIndex, columnId, value) => {
+  setTaskList(old =>
+    old.map((row, index) => {
+      if (index === rowIndex) {
+        return {
+          ...old[rowIndex],
+          [columnId]: value,
         };
-        // update customer
-        dispatch(updateTask(updatedTask));
-        validation.resetForm();
-      } else {
-        const newTask = {
-          _id: (Math.floor(Math.random() * (30 - 20)) + 20).toString(),
-          taskId: values["taskId"],
-          project: values["project"],
-          task: values["task"],
-          creater: values["creater"],
-          dueDate: date,
-          status: values["status"],
-          priority: values["priority"],
-          subItem: values["subItem"],
-        };
-        // save new customer
-        dispatch(addNewTask(newTask));
-        validation.resetForm();
       }
-      toggle();
-    },
-  });
+      return row;
+    })
+  );
+};
 
-  // Update Data
-  const handleCustomerClick = useCallback((arg) => {
-    const task = arg;
 
-    setTask({
-      _id: task._id,
-      taskId: task.taskId,
-      project: task.project,
-      task: task.task,
-      creater: task.creater,
-      dueDate: task.dueDate,
-      status: task.status,
-      priority: task.priority,
-      subItem: task.subItem,
-    });
+  const EditableCell = ({
+  initialValue,
+  row,
+  column,
+  updateMyData,
+}) => {
+  const [value, setValue] = useState(initialValue);
 
-    setIsEdit(true);
-    toggle();
-  }, [toggle]);
+  const onChange = e => {
+    setValue(e.target.value);
+  };
 
-  // Add Data
-  const handleTaskClicks = () => {
-    setTask("");
-    setIsEdit(false);
-    toggle();
+  const onBlur = () => {
+    updateMyData(row.index, column.id, value);
   };
 
   useEffect(() => {
-    if (!isEmpty(taskList)) setTaskList(taskList);
-  }, [taskList]);
+    setValue(initialValue);
+  }, [initialValue]);
 
-  useEffect(() => {
-    if (taskList && !taskList.length) {
-      dispatch(getTaskList());
+  return <input value={value || ''} onChange={onChange} onBlur={onBlur} />;
+};
+
+  const handleCreateTask = () => {
+    const newId = lastId + 1;
+    setLastId(newId);
+
+    const newTask = {
+      id: newId,
+      taskId: generateNextTaskId(),
+      taskType: "Direct",
+      project: "",
+      customer: "",
+      function: "",
+      task: "",
+      priority: "High",
+      assigned: "No",
+      responsibility: "",
+      dueDate: moment().format('YYYY-MM-DD'),
+      logDate: moment().format('YYYY-MM-DD'),
+      status: "New",
+      statusDate: moment().format('YYYY-MM-DD'),
+      remarks: "",
+      timeTaken: "",
+      active: "Active",
     }
-  }, [dispatch, taskList]);
+    setTaskList([newTask, ...TaskList]);
+    setEditableRowId(newId);
+    setNewTaskIds([...newTaskIds, newId]);
+    setEditedRowData(newTask);
+  }
+
+  const generateNextTaskId = () => {
+    const nextTaskId = lastTaskId + 1;
+    setLastTaskId(nextTaskId);
+    return `#PUVI${nextTaskId.toString().padStart(2, '0')}`;
+  };
 
 
-  useEffect(() => {
-    setTaskList(taskList);
-  }, [taskList]);
+  const handleEditClick = (taskData) => {
+    setEditableRowId(taskData.id);
+    setOriginalRowData(taskData);
 
-  useEffect(() => {
-    if (!isEmpty(taskList)) {
-      setTaskList(taskList);
-      setIsEdit(false);
-    }
-  }, [taskList]);
+    const isCreatingNewTask = !taskData.dueDate && !taskData.logDate && !taskData.statusDate;
 
-  // Node API 
-  // useEffect(() => {
-  //   if (isTaskCreated) {
-  //     setTask(null);
-  //     dispatch(getTaskList());
-  //   }
-  // }, [
-  //   dispatch,
-  //   isTaskCreated,
-  // ]);
+    setEditedRowData({
+      ...taskData,
+      // dueDate: taskData.dueDate ? moment(taskData.dueDate, 'DD MMM Y').format('YYYY-MM-DD') : "", 
+      // logDate: taskData.logDate ? moment(taskData.logDate, 'DD MMM Y').format('YYYY-MM-DD') : "", 
+      // statusDate: isCreatingNewTask ? moment().format('YYYY-MM-DD') : moment(taskData.statusDate, 'DD MMM Y').format('YYYY-MM-DD'),
+      dueDate: taskData.dueDate ? moment(taskData.dueDate, 'DD MMM Y').format('YYYY-MM-DD') : '', 
+      logDate: taskData.logDate ? moment(taskData.logDate, 'DD MMM Y').format('YYYY-MM-DD') : '', 
+      statusDate: taskData.statusDate ? moment(taskData.statusDate, 'DD MMM Y').format('YYYY-MM-DD') : '',
+    });
+  };
 
-  // Checked All
-  const checkedAll = useCallback(() => {
-    const checkall = document.getElementById("checkBoxAll");
-    const ele = document.querySelectorAll(".taskCheckBox");
-
-    if (checkall.checked) {
-      ele.forEach((ele) => {
-        ele.checked = true;
-      });
+  const handleCancelClick = () => {
+    if (newTaskIds.includes(editableRowId)) {
+      setTaskList(TaskList.filter(task => task.id !== editableRowId));
+      setNewTaskIds(newTaskIds.filter(id => id !== editableRowId));
     } else {
-      ele.forEach((ele) => {
-        ele.checked = false;
-      });
+      setTaskList(prevTaskList =>
+        prevTaskList.map(task =>
+          task.id === editableRowId ? originalRowData : task
+        )
+      );
     }
-    deleteCheckbox();
-  }, []);
-
-  // Delete Multiple
-  const [selectedCheckBoxDelete, setSelectedCheckBoxDelete] = useState([]);
-  const [isMultiDeleteButton, setIsMultiDeleteButton] = useState(false);
-
-  const deleteMultiple = () => {
-    const checkall = document.getElementById("checkBoxAll");
-    selectedCheckBoxDelete.forEach((element) => {
-      dispatch(deleteTask(element.value));
-      setTimeout(() => { toast.clearWaitingQueue(); }, 3000);
-    });
-    setIsMultiDeleteButton(false);
-    checkall.checked = false;
+    setEditableRowId(null);
+    setEditedRowData({});
   };
 
-  const deleteCheckbox = () => {
-    const ele = document.querySelectorAll(".taskCheckBox:checked");
-    ele.length > 0 ? setIsMultiDeleteButton(true) : setIsMultiDeleteButton(false);
-    setSelectedCheckBoxDelete(ele);
+  const handleApplyClick = () => {
+    setTaskList(prevTaskList => {
+      if (newTaskIds.includes(editableRowId)) {
+        return prevTaskList.map(task => task.id === editableRowId ? editedRowData : task);
+      } else {
+        return prevTaskList.map(task => {
+          if (task.id === editableRowId) {
+            return { ...task, ...editedRowData };
+          }
+          return task;
+        });
+      }
+    });
+    setEditableRowId(null);
+    setEditedRowData({});
+    setNewTaskIds(prevIds => prevIds.filter(id => id !== editableRowId));
+  };
+
+  const handleEditChange = (value, accessor) => {
+    console.log(`handleEditChange called for ${accessor} with value: ${value}`);
+    if(['dueDate', 'logDate', 'statusDate'].includes(accessor)) {
+      value = moment(value).format('YYYY-MM-DD');
+    }
+    let updatedData = { ...editedRowData, [accessor]: value };
+    if (accessor === "taskType" && newTaskIds.includes(editableRowId)) {
+      if (value === "Direct") {
+        updatedData = {
+          ...updatedData,
+          project: "",
+          responsibility: "",
+          status: "",
+          statusDate: "",
+          active: "",
+        };
+      } else if (value === "Project") {
+          updatedData = {
+            ...updatedData,
+            responsibility: "",
+            status: "",
+            statusDate: "",
+            active: "",
+          };
+      }
+    }
+    setEditedRowData(updatedData);
+  };
+
+  const handleDeleteClick = (taskId) => {
+    setShowDeleteModal(true);
+    setTaskToDelete(taskId);
+  }
+
+  const handleCloseDeleteModal = () => {
+    setShowDeleteModal(false);
+    setTaskToDelete(null);
+  }
+
+  const handleConfirmDelete = () => {
+    if(taskToDelete !== null) {
+      setTaskList((currentTaskList) => currentTaskList.filter((task) => task.id !== taskToDelete));
+      setShowDeleteModal(false);
+      setTaskToDelete(null);
+    }
+  }
+
+  const getCellStyle = (isEditing) => {
+    return isEditing ? { minWidth: '150px' } : {};
   };
 
   const columns = useMemo(
@@ -284,46 +305,141 @@ const AllTasks = () => {
       },
       {
         Header: "Task Type",
-        accessor: "subItem",
+        accessor: "taskType",
         filterable: false,
-        Cell: (cell) => {
-          const assigned = cell.value.map((item) => item.img ? item.img : item);
-          return (<React.Fragment>
-            <div className="avatar-group">
-              {assigned.map((item, index) => (
-                <Link key={index} to="#" className="avatar-group-item">
-                  <img src={process.env.REACT_APP_API_URL + "/images/users/" + item} alt="" className="rounded-circle avatar-xxs" />
-                </Link>
-              ))}
-
-            </div>
-          </React.Fragment>);
+        Cell: ({ row }) => {
+          const isEditing = row.original.id === editableRowId;
+          const cellStyle = getCellStyle(isEditing);
+          if(isEditing) {
+            return (
+              <Input
+                type='select'
+                value={editedRowData.taskType ?? "Direct"}
+                onChange={(e) => 
+                  handleEditChange(e.target.value, "taskType")
+                }
+                style={cellStyle}
+              >
+                <option value="Project">Project</option>
+                <option value="Direct">Direct</option>
+              </Input>
+            );
+          }
+          let badgeClass = '';
+          if (row.original.taskType === "Project") badgeClass = "bg-success";
+          if (row.original.taskType === "Direct") badgeClass = "bg-danger";
+          return (
+            <span className={`badge ${badgeClass} text-uppercase`}>
+              {row.original.taskType}
+            </span>
+          );
         },
       },
       {
-        Header: "Project",
+        Header: "Project Name",
         accessor: "project",
         filterable: false,
-        Cell: (cellProps) => {
-          return <Project {...cellProps} />;
+        Cell: ({ row }) => {
+          const isEditing = row.original.id === editableRowId;
+          const cellStyle = getCellStyle(isEditing);
+          if(isEditing) {
+            return (
+              <Input
+                type='select'
+                value={editedRowData.project ?? ""}
+                onChange={(e) => 
+                  handleEditChange(e.target.value, "project")
+                }
+                style={cellStyle}
+                disabled={editedRowData.taskType === "Direct" && newTaskIds.includes(editableRowId)}
+              >
+                <option value="">Select</option>
+                <option value="Task360">Task360</option>
+                <option value="ITC">ITC</option>
+                <option value="HRMS">HRMS</option>
+              </Input>
+            );
+          }
+          return <span>{row.original.project}</span>
         },
       },
       {
         Header: "Customer",
-        accessor: "creater",
+        accessor: "customer",
         filterable: false,
-        Cell: (cellProps) => {
-          return <CreateBy {...cellProps} />;
+        Cell: ({ row }) => {
+          const isEditing = row.original.id === editableRowId;
+          const cellStyle = getCellStyle(isEditing);
+          if(isEditing) {
+            return (
+              <Input
+                type='select'
+                value={editedRowData.customer ?? ""}
+                onChange={(e) => 
+                  handleEditChange(e.target.value, "customer")
+                }
+                style={cellStyle}
+              >
+                <option value="">Select</option>
+                <option value="Akranta">Akranta</option>
+                <option value="Vamtech">Vamtech</option>
+                <option value="Zoho">Zoho</option>
+              </Input>
+            );
+          }
+          return <span>{row.original.customer}</span>
+        },
+      },
+      {
+        Header: "Function",
+        accessor: "function",
+        filterable: false,
+        Cell: ({ row }) => {
+          const isEditing = row.original.id === editableRowId;
+          const cellStyle = getCellStyle(isEditing);
+          if(isEditing) {
+            return (
+              <Input
+                type='select'
+                value={editedRowData.function ?? ""}
+                onChange={(e) => 
+                  handleEditChange(e.target.value, "function")
+                }
+                style={cellStyle}
+              >
+                <option value="">Select</option>
+                <option value="Mechanical">Mechanical</option>
+                <option value="Electrical">Electrical</option>
+                <option value="Office">Office</option>
+                <option value="Generic">Generic</option>
+              </Input>
+            );
+          }
+          return <span>{row.original.function}</span>
         },
       },
       {
         Header: "Task Description",
         accessor: "task",
         filterable: false,
-        Cell: (cellProps) => {
-          return <React.Fragment>
+        Cell: ({ row }) => {
+          const isEditing = row.original.id === editableRowId;
+          const cellStyle = getCellStyle(isEditing);
+          if(isEditing) {
+            return (
+              <Input
+                type='text'
+                value={editedRowData.task}
+                onChange={(e) => 
+                  handleEditChange(e.target.value, "task")
+                }
+                style={cellStyle}
+              />
+            );
+          };
+          return (
             <div className="d-flex">
-              <div className="flex-grow-1 tasks_name">{cellProps.value}</div>
+              <div className="flex-grow-1 tasks_name">{row.original.task}</div>
               <div className="flex-shrink-0 ms-4">
                 <ul className="list-inline tasks-list-menu mb-0">
                   <li className="list-inline-item">
@@ -332,94 +448,339 @@ const AllTasks = () => {
                     </Link>
                   </li>
                   <li className="list-inline-item">
-                    <Link to="#" onClick={() => { const taskData = cellProps.row.original; handleCustomerClick(taskData); }}>
+                    <Link to="#" onClick={() => handleEditClick(row.original)}>
                       <i className="ri-pencil-fill align-bottom me-2 text-muted"></i>
                     </Link>
                   </li>
                   <li className="list-inline-item">
-                    <Link to="#" className="remove-item-btn" onClick={() => { const taskData = cellProps.row.original; onClickDelete(taskData); }}>
+                    <Link to="#" className="remove-item-btn" onClick={() => handleDeleteClick(row.original.id)}>
                       <i className="ri-delete-bin-fill align-bottom me-2 text-muted"></i>
                     </Link>
                   </li>
                 </ul>
               </div>
             </div>
-          </React.Fragment>;
+          );
         },
       },
       {
         Header: "Priority",
         accessor: "priority",
         filterable: false,
-        Cell: (cellProps) => {
-          return <Priority {...cellProps} />;
+        Cell: ({ row }) => {
+          const isEditing = row.original.id === editableRowId;
+          const cellStyle = getCellStyle(isEditing);
+          if(isEditing) {
+            return (
+              <Input
+                type='select'
+                value={editedRowData.priority ?? "High"}
+                onChange={(e) => 
+                  handleEditChange(e.target.value, "priority")
+                }
+                style={cellStyle}
+              >
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
+              </Input>
+            );
+          }
+          let badgeClass = '';
+          if (row.original.priority === "High") badgeClass = "bg-danger";
+          if (row.original.priority === "Medium") badgeClass = "bg-warning";
+          if (row.original.priority === "Low") badgeClass = "bg-success";
+          return (
+            <span className={`badge ${badgeClass} text-uppercase`}>
+              {row.original.priority}
+            </span>
+          );
+        },
+      },
+      {
+        Header: "Assigned",
+        accessor: "assigned",
+        filterable: false,
+        Cell: ({ row }) => {
+          const isEditing = row.original.id === editableRowId;
+          const cellStyle = getCellStyle(isEditing);
+          if(isEditing) {
+            return (
+              <Input
+                type='select'
+                value={editedRowData.assigned ?? "No"}
+                onChange={(e) => 
+                  handleEditChange(e.target.value, "assigned")
+                }
+                style={cellStyle}
+              >
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </Input>
+            );
+          }
+          let badgeClass = '';
+          if (row.original.assigned === "No") badgeClass = "bg-danger";
+          if (row.original.assigned === "Yes") badgeClass = "bg-success";
+          return (
+            <span className={`badge ${badgeClass} text-uppercase`}>
+              {row.original.assigned}
+            </span>
+          );
         },
       },
       {
         Header: "Responsibility",
         accessor: "responsibility",
         filterable: false,
-        Cell: (cellProps) => {
-          return <Priority {...cellProps} />;
+        Cell: ({ row }) => {
+          const isEditing = row.original.id === editableRowId;
+          const cellStyle = getCellStyle(isEditing);
+          if(isEditing) {
+            return (
+              <Input
+                type='select'
+                value={editedRowData.responsibility ?? ""}
+                onChange={(e) => 
+                  handleEditChange(e.target.value, "responsibility")
+                }
+                style={cellStyle}
+                disabled={(editedRowData.taskType === "Direct" || editedRowData.taskType === "Project") && newTaskIds.includes(editableRowId)}
+              >
+                <option value="">Select</option>
+                <option value="Vijayan">Vijayan</option>
+                <option value="Purushoth">Purushoth</option>
+                <option value="Nagappan">Nagappan</option>
+              </Input>
+            );
+          }
+          return <span>{row.original.responsibility}</span>
         },
       },
       {
         Header: "Proposed Target",
-        accessor: "target",
+        accessor: "dueDate",
         filterable: false,
-        Cell: (cellProps) => {
-          return <Priority {...cellProps} />;
+        Cell: ({ row }) => {
+          const isEditing = row.original.id === editableRowId;
+          const cellStyle = getCellStyle(isEditing);
+          if(isEditing) {
+            return (
+              <div style={cellStyle}>
+                <Flatpickr
+                  value={new Date(editedRowData.dueDate)}
+                  onChange={([date]) => {
+                    handleEditChange(moment(date).format('YYYY-MM-DD'), "dueDate");
+                  }}
+                  options={{
+                    altInput: true,
+                    altFormat: "F j, Y",
+                    dateFormat: "Y-m-d",
+                    minDate: "today"
+                  }}
+                />
+              </div>
+            );
+          }
+          return <span>{handleValidDate(row.original.dueDate)}</span>
+        },
+      },
+      {
+        Header: "Log Date",
+        accessor: "logDate",
+        filterable: false,
+        Cell: ({ row }) => {
+          const isEditing = row.original.id === editableRowId;
+          const cellStyle = getCellStyle(isEditing);
+          if(isEditing) {
+            return (
+              <div style={cellStyle}>
+                <Flatpickr
+                  value={new Date(editedRowData.logDate)}
+                  onChange={([date]) => {
+                    handleEditChange(moment(date).format('YYYY-MM-DD'), "logDate");
+                  }}
+                  options={{
+                    altInput: true,
+                    altFormat: "F j, Y",
+                    dateFormat: "Y-m-d",
+                    minDate: new Date().fp_incr(-3),
+                  }}
+                />
+              </div>
+            );
+          }
+          return <span>{handleValidDate(row.original.logDate)}</span>
         },
       },
       {
         Header: "Status",
         accessor: "status",
         filterable: false,
-        Cell: (cellProps) => {
-          return <Status {...cellProps} />;
+        Cell: ({ row }) => {
+          const isEditing = row.original.id === editableRowId;
+          const cellStyle = getCellStyle(isEditing);
+          if(isEditing) {
+            return (
+              <Input
+                type='select'
+                value={editedRowData.status ?? "New"}
+                onChange={(e) => 
+                  handleEditChange(e.target.value, "status")
+                }
+                style={cellStyle}
+                disabled={(editedRowData.taskType === "Direct" || editedRowData.taskType === "Project") && newTaskIds.includes(editableRowId)}
+              >
+                <option value="New">New</option>
+                <option value="Accepted">Accepted</option>
+                <option value="Pending">Pending</option>
+                <option value="Completed">Completed</option>
+                <option value="Closed">Closed</option>
+                <option value="NotCompleted">Not Completed</option>
+                <option value="Removed">Removed</option>
+              </Input>
+            );
+          }
+          let badgeClass = "";
+          switch (row.original.status) {
+            case "Closed":
+              badgeClass = "bg-success-subtle text-success";
+              break;
+            case "New":
+              badgeClass = "bg-info-subtle text-info";
+              break;
+            case "Completed":
+              badgeClass = "bg-success-subtle text-success";
+              break;
+            case "Accepted":
+              badgeClass = "bg-warning-subtle text-warning";
+              break;
+            case "Pending":
+              badgeClass = "bg-danger-subtle text-danger";
+              break;
+            case "Not Completed":
+              badgeClass = "bg-danger-subtle text-danger";
+              break;
+            case "Removed":
+              badgeClass = "bg-danger-subtle text-danger";
+              break;
+            default:
+              badgeClass = "";
+          }
+
+          return (
+            <span className={`badge ${badgeClass} text-uppercase`}>
+              {row.original.status}
+            </span>
+          );
+        },
+      },
+      {
+        Header: "Status Date",
+        accessor: "statusDate",
+        filterable: false,
+        Cell: ({ row }) => {
+          const isEditing = row.original.id === editableRowId;
+          const cellStyle = getCellStyle(isEditing);
+          if(isEditing) {
+            return (
+              <div style={cellStyle}>
+                <Flatpickr
+                  value={editedRowData.statusDate ? new Date(editedRowData.statusDate) : new Date()}
+                  onChange={([date]) => {
+                    handleEditChange(moment(date).format('YYYY-MM-DD'), "statusDate");
+                  }}
+                  options={{
+                    altInput: true,
+                    altFormat: "F j, Y",
+                    dateFormat: "Y-m-d"
+                  }}
+                  disabled={(editedRowData.taskType === "Direct" || editedRowData.taskType === "Project") && newTaskIds.includes(editableRowId)}
+              />
+              </div>
+            );
+          }
+          return <span>{handleValidDate(row.original.statusDate)}</span>
+        },
+      },
+      {
+        Header: "Remarks",
+        accessor: "remarks",
+        Cell: ({ row, column }) => {
+          const isEditing = row.original.id === editableRowId;
+    return isEditing ? (
+      <EditableCell
+        initialValue={row.values.remarks}
+        row={row}
+        column={column}
+        updateMyData={updateMyData}
+      />
+    ) : (
+      <>{row.values.remarks}</>
+    );
+        },
+      },
+      {
+        Header: "Time Taken (Hours)",
+        accessor: "timeTaken",
+        filterable: false,
+        Cell: ({ row }) => {
+          const isEditing = row.original.id === editableRowId;
+          const cellStyle = getCellStyle(isEditing);
+          if(isEditing) {
+            return (
+              <Input
+                type='number'
+                value={editedRowData.timeTaken}
+                onChange={(e) => 
+                  handleEditChange(e.target.value, "timeTaken")
+                }
+                style={cellStyle}
+              />
+            );
+          };
+          return <span>{row.original.timeTaken}</span>
         },
       },
       {
         Header: "Active",
-        accessor: "dueDate",
+        accessor: "active",
         filterable: false,
-        Cell: (cellProps) => {
-          return <DueDate {...cellProps} />;
+        Cell: ({ row }) => {
+          const isEditing = row.original.id === editableRowId;
+          const cellStyle = getCellStyle(isEditing);
+          if(isEditing) {
+            return (
+              <Input
+                type='select'
+                value={editedRowData.active ?? "Active"}
+                onChange={(e) => 
+                  handleEditChange(e.target.value, "active")
+                }
+                style={cellStyle}
+                disabled={(editedRowData.taskType === "Direct" || editedRowData.taskType === "Project") && newTaskIds.includes(editableRowId)}
+              >
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </Input>
+            );
+          }
+          let badgeClass = '';
+          if (row.original.active === "Active") badgeClass = "bg-success";
+          if (row.original.active === "Inactive") badgeClass = "bg-danger";
+          return (
+            <span className={`badge ${badgeClass} text-uppercase`}>
+              {row.original.active}
+            </span>
+          );
         },
       },
     ],
-    [handleCustomerClick, checkedAll]
+    [editableRowId, editedRowData, handleEditChange, updateMyData]
   );
-
-  const defaultdate = () => {
-    let d = new Date(),
-      months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return ((d.getDate() + ' ' + months[d.getMonth()] + ', ' + d.getFullYear()).toString());
-  };
-
-  const [date, setDate] = useState(defaultdate());
-
-  const dateformate = (e) => {
-    const date = e.toString().split(" ");
-    const joinDate = (date[2] + " " + date[1] + ", " + date[3]).toString();
-    setDate(joinDate);
-  };
 
   return (
     <React.Fragment>
-      <DeleteModal
-        show={deleteModal}
-        onDeleteClick={handleDeleteTask}
-        onCloseClick={() => setDeleteModal(false)}
-      />
-      <DeleteModal
-        show={deleteModalMulti}
-        onDeleteClick={() => {
-          deleteMultiple();
-          setDeleteModalMulti(false);
-        }}
-        onCloseClick={() => setDeleteModalMulti(false)}
-      />
       <div className="row">
         <Col lg={12}>
           <div className="card" id="tasksList">
@@ -430,19 +791,23 @@ const AllTasks = () => {
                   <div className="d-flex flex-wrap gap-2">
                     <button className="btn btn-danger add-btn me-1" onClick={() => { setIsEdit(false); toggle(); }}><i className="ri-add-line align-bottom me-1"></i> Import</button>
                     <button className="btn btn-danger add-btn me-1" onClick={() => { setIsEdit(false); toggle(); }}><i className="ri-add-line align-bottom me-1"></i> Export</button>
-                    <button className="btn btn-danger add-btn me-1" onClick={() => { setIsEdit(false); toggle(); }}><i className="ri-add-line align-bottom me-1"></i> Create Task</button>
-                    <button className="btn btn-danger add-btn me-1" onClick={() => { setIsEdit(false); toggle(); }}><i className="ri-add-line align-bottom me-1"></i>Apply</button>
-                    {isMultiDeleteButton && <button className="btn btn-soft-danger" onClick={() => setDeleteModalMulti(true)}><i className="ri-delete-bin-2-line"></i></button>}
+                    <button className="btn btn-danger add-btn me-1" onClick={handleCreateTask}><i className="ri-add-line align-bottom me-1"></i> Create Task</button>
+                    {editableRowId && (
+                      <>
+                        <Button color='secondary' onClick={handleCancelClick}>Cancel</Button>
+                        <Button color='primary' onClick={handleApplyClick}>Apply</Button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
             <div className="card-body pt-0">
-              {isTaskSuccess && TaskList && TaskList.length > 0 ? (
                 <TableContainer
                   columns={columns}
-                  data={taskList}
+                  data={TaskList}
                   isGlobalFilter={true}
+                  updateMyData={updateMyData}
                   isAddUserList={false}
                   customPageSize={8}
                   className="custom-header-css"
@@ -450,248 +815,19 @@ const AllTasks = () => {
                   tableClass="align-middle table-nowrap mb-0"
                   theadClass="table-light table-nowrap"
                   thClass="table-light text-muted"
-                  handleTaskClick={handleTaskClicks}
                   isTaskListFilter={true}
                   SearchPlaceholder='Search for tasks or something...'
                 />
-              ) : (<Loader error={error} />)
-              }
-              <ToastContainer closeButton={false} limit={1} />
             </div>
           </div>
         </Col>
       </div>
 
-
-      <Modal
-        isOpen={modal}
-        toggle={toggle}
-        centered
-        size="lg"
-        className="border-0"
-        modalClassName='modal fade zoomIn'
-      >
-        <ModalHeader className="p-3 bg-info-subtle" toggle={toggle}>
-          {!!isEdit ? "Edit Task" : "Create Task"}
-        </ModalHeader>
-        <Form className="tablelist-form" onSubmit={(e) => {
-          e.preventDefault();
-          validation.handleSubmit();
-          return false;
-        }}>
-          <ModalBody className="modal-body">
-            <Row className="g-3">
-              <Col lg={12}>
-                <Label for="taskId-field" className="form-label">Order Id</Label>
-                <Input
-                  name="taskId"
-                  id="taskId-field"
-                  className="form-control"
-                  placeholder="Enter Task Id "
-                  type="text"
-                  validate={{
-                    required: { value: true },
-                  }}
-                  onChange={validation.handleChange}
-                  onBlur={validation.handleBlur}
-                  value={validation.values.taskId || ""}
-                  invalid={
-                    validation.touched.taskId && validation.errors.taskId ? true : false
-                  }
-                />
-                {validation.touched.taskId && validation.errors.taskId ? (
-                  <FormFeedback type="invalid">{validation.errors.taskId}</FormFeedback>
-                ) : null}
-              </Col>
-
-              <Col lg={12}>
-                <Label for="projectName-field" className="form-label">Project Name</Label>
-                <Input
-                  name="project"
-                  id="projectName-field"
-                  className="form-control"
-                  placeholder="Project name"
-                  type="text"
-                  validate={{
-                    required: { value: true },
-                  }}
-                  onChange={validation.handleChange}
-                  onBlur={validation.handleBlur}
-                  value={validation.values.project || ""}
-                  invalid={
-                    validation.touched.project && validation.errors.project ? true : false
-                  }
-                />
-                {validation.touched.project && validation.errors.project ? (
-                  <FormFeedback type="invalid">{validation.errors.project}</FormFeedback>
-                ) : null}
-              </Col>
-              <Col lg={12}>
-                <div>
-                  <Label for="tasksTitle-field" className="form-label">Title</Label>
-                  <Input
-                    name="task"
-                    id="tasksTitle-field"
-                    className="form-control"
-                    placeholder="Title"
-                    type="text"
-                    validate={{
-                      required: { value: true },
-                    }}
-                    onChange={validation.handleChange}
-                    onBlur={validation.handleBlur}
-                    value={validation.values.task || ""}
-                    invalid={
-                      validation.touched.task && validation.errors.task ? true : false
-                    }
-                  />
-                  {validation.touched.task && validation.errors.task ? (
-                    <FormFeedback type="invalid">{validation.errors.task}</FormFeedback>
-                  ) : null}
-                </div>
-              </Col>
-              <Col lg={12}>
-                <Label for="clientName-field" className="form-label">Client Name</Label>
-                <Input
-                  name="creater"
-                  id="clientName-field"
-                  className="form-control"
-                  placeholder="Client name"
-                  type="text"
-                  validate={{
-                    required: { value: true },
-                  }}
-                  onChange={validation.handleChange}
-                  onBlur={validation.handleBlur}
-                  value={validation.values.creater || ""}
-                  invalid={
-                    validation.touched.creater && validation.errors.creater ? true : false
-                  }
-                />
-                {validation.touched.creater && validation.errors.creater ? (
-                  <FormFeedback type="invalid">{validation.errors.creater}</FormFeedback>
-                ) : null}
-              </Col>
-
-              <Col lg={12}>
-                <Label className="form-label">Assigned To</Label>
-                <SimpleBar style={{ maxHeight: "95px" }}>
-                  <ul className="list-unstyled vstack gap-2 mb-0">
-                    {Assigned.map((item, key) => (<li key={key}>
-                      <div className="form-check d-flex align-items-center">
-                        <Input name="subItem" className="form-check-input me-3" type="checkbox"
-                          onChange={validation.handleChange}
-                          onBlur={validation.handleBlur}
-                          value={item.img}
-                          invalid={validation.touched.subItem && validation.errors.subItem ? true : false}
-                          id={item.imgId} />
-
-                        <Label className="form-check-label d-flex align-items-center" htmlFor={item.imgId}>
-                          <span className="flex-shrink-0">
-                            <img src={process.env.REACT_APP_API_URL + "/images/users/" + item.img} alt="" className="avatar-xxs rounded-circle" />
-                          </span>
-                          <span className="flex-grow-1 ms-2">
-                            {item.name}
-                          </span>
-                        </Label>
-                        {validation.touched.subItem && validation.errors.subItem ? (
-                          <FormFeedback type="invalid">{validation.errors.subItem}</FormFeedback>
-                        ) : null}
-                      </div>
-                    </li>))}
-                  </ul>
-                </SimpleBar>
-              </Col>
-
-              <Col lg={6}>
-                <Label for="duedate-field" className="form-label">Due Date</Label>
-
-                <Flatpickr
-                  name="dueDate"
-                  id="duedate-field"
-                  className="form-control"
-                  placeholder="Select a date"
-                  options={{
-                    altInput: true,
-                    altFormat: "d M, Y",
-                    dateFormat: "d M, Y",
-                  }}
-                  onChange={(e) =>
-                    dateformate(e)
-                  }
-                  value={validation.values.dueDate || ""}
-                />
-                {validation.touched.dueDate && validation.errors.dueDate ? (
-                  <FormFeedback type="invalid">{validation.errors.dueDate}</FormFeedback>
-                ) : null}
-              </Col>
-              <Col lg={6}>
-                <Label for="ticket-status" className="form-label">Status</Label>
-                <Input
-                  name="status"
-                  type="select"
-                  className="form-select"
-                  id="ticket-field"
-                  onChange={validation.handleChange}
-                  onBlur={validation.handleBlur}
-                  value={
-                    validation.values.status || ""
-                  }
-                >
-                  <option value="">Status</option>
-                  <option value="New">New</option>
-                  <option value="Inprogress">Inprogress</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Completed">Completed</option>
-                </Input>
-                {validation.touched.status &&
-                  validation.errors.status ? (
-                  <FormFeedback type="invalid">
-                    {validation.errors.status}
-                  </FormFeedback>
-                ) : null}
-              </Col>
-              <Col lg={12}>
-                <Label for="priority-field" className="form-label">Priority</Label>
-                <Input
-                  name="priority"
-                  type="select"
-                  className="form-select"
-                  id="priority-field"
-                  onChange={validation.handleChange}
-                  onBlur={validation.handleBlur}
-                  value={
-                    validation.values.priority || ""
-                  }
-                >
-                  <option value="">Priority</option>
-                  <option value="High">High</option>
-                  <option value="Medium">Medium</option>
-                  <option value="Low">Low</option>
-                </Input>
-                {validation.touched.priority &&
-                  validation.errors.priority ? (
-                  <FormFeedback type="invalid">
-                    {validation.errors.priority}
-                  </FormFeedback>
-                ) : null}
-              </Col>
-            </Row>
-          </ModalBody>
-          <div className="modal-footer">
-            <div className="hstack gap-2 justify-content-end">
-              <Button
-                type="button"
-                onClick={() => {
-                  setModal(false);
-                }}
-                className="btn-light"
-              >Close</Button>
-              <button type="submit" className="btn btn-success" id="add-btn">{!!isEdit ? "Update Task" : "Add Task"}</button>
-            </div>
-          </div>
-        </Form>
-      </Modal>
+      <DeleteModal
+        show={showDeleteModal}
+        onDeleteClick={handleConfirmDelete}
+        onCloseClick={handleCloseDeleteModal}
+      />
     </React.Fragment>
   );
 };

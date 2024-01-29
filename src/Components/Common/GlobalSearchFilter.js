@@ -303,7 +303,7 @@ const CryptoOrdersGlobalFilter = () => {
                 </select>
             </Col>
             <Col xl={1} md={4}>
-                <button className="btn btn-success w-100">Filters</button>
+                <button className="btn btn-success w-100">Filter</button>
             </Col>
         </React.Fragment>
     );
@@ -463,7 +463,7 @@ const TaskListGlobalFilter = () => {
 
             <div className="col-sm-auto">
                 <button type="button" className="btn btn-primary w-100"> <i className="ri-equalizer-fill me-1 align-bottom"></i>
-                    Filters
+                    Filter
                 </button>
             </div>
         </React.Fragment>

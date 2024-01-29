@@ -101,7 +101,7 @@ const fakeBackend = () => {
       token: token
     }
     
-    localStorage.setItem("authToken", token);
+    sessionStorage.setItem("authToken", token);
 
     return new Promise((resolve) => {
       setTimeout(() => {
