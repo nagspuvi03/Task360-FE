@@ -21,10 +21,10 @@ const ProfileDropdown = () => {
     const [userRole, setUserRole] = useState("");
 
     useEffect(() => {
-        if (localStorage.getItem("authToken")) {
-            const storedUserName = localStorage.getItem("userName");
+        if (sessionStorage.getItem("authToken")) {
+            const storedUserName = sessionStorage.getItem("userName");
             setUserName(storedUserName);
-            const storedUserRole = localStorage.getItem("userRole");
+            const storedUserRole = sessionStorage.getItem("userRole");
             switch (storedUserRole) {
             case 'AD':
                 setUserRole('Admin');

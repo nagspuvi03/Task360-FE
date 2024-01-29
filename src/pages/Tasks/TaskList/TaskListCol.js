@@ -1,17 +1,20 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import * as moment from "moment";
+import moment from "moment";
 
-const handleValidDate = date => {
-    const date1 = moment(new Date(date)).format("DD MMM Y");
-    return date1;
+const handleValidDate = (dateStr) => {
+  const date = moment(dateStr, ['YYYY-MM-DD', 'DD MMM, YYYY']);
+  if (!date.isValid()) {
+    return 'Invalid date';
+  }
+  return date.format("DD MMM Y");
 };
 
 
 const OrdersId = (cell) => {
     return (
         <React.Fragment>
-            <Link to="/apps-tasks-details" className="fw-medium link-primary">{cell.value}</Link>
+            {cell.value}
         </React.Fragment>
     );
 };
@@ -117,5 +120,37 @@ const Priority = (cell) => {
     );
 };
 
+const Responsibility = (cell) => {
+    return (
+        <React.Fragment>
+            {cell.value === "Medium" ?
+                <span className="badge bg-warning text-uppercase">{cell.value}</span>
+                :
+                cell.value === "High" ?
+                    <span className="badge bg-danger text-uppercase">{cell.value}</span>
+                    : cell.value === "Low" ?
+                        <span className="badge bg-success text-uppercase">{cell.value}</span>
+                        : null
+            }
+        </React.Fragment>
+    );
+};
 
-export { OrdersId, Project, Tasks, CreateBy, AssignedTo, DueDate, Status, Priority };
+const Target = (cell) => {
+    return (
+        <React.Fragment>
+            {cell.value === "Medium" ?
+                <span className="badge bg-warning text-uppercase">{cell.value}</span>
+                :
+                cell.value === "High" ?
+                    <span className="badge bg-danger text-uppercase">{cell.value}</span>
+                    : cell.value === "Low" ?
+                        <span className="badge bg-success text-uppercase">{cell.value}</span>
+                        : null
+            }
+        </React.Fragment>
+    );
+};
+
+
+export { OrdersId, Project, Tasks, CreateBy, AssignedTo, DueDate, Status, Priority, Responsibility, Target, handleValidDate };

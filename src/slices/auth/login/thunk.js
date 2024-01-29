@@ -14,11 +14,11 @@ export const loginUser = (user, navigate) => async (dispatch) => {
     const data = response;
 
     if (data.token) {
-      localStorage.setItem('authToken', data.token);
-      localStorage.setItem('userName', data.userName);
-      localStorage.setItem('userEmail', data.email);
-      localStorage.setItem('userId', data.userId);
-      localStorage.setItem('userRole', data.role);
+      sessionStorage.setItem('authToken', data.token);
+      sessionStorage.setItem('userName', data.userName);
+      sessionStorage.setItem('userEmail', data.email);
+      sessionStorage.setItem('userId', data.userId);
+      sessionStorage.setItem('userRole', data.role);
       dispatch(loginSuccess(data));
       navigate('/dashboard');
     }

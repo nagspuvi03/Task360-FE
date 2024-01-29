@@ -24,7 +24,7 @@ const taskWidgets = [
         iconClass: "info",
         decimals: 1,
         prefix: "",
-        suffix: "k",
+        suffix: "",
     },
     {
         id: 2,
@@ -37,7 +37,7 @@ const taskWidgets = [
         iconClass: "warning",
         decimals: 1,
         prefix: "",
-        suffix: "k",
+        suffix: "",
     },
     {
         id: 3,
@@ -50,7 +50,7 @@ const taskWidgets = [
         iconClass: "success",
         decimals: 2,
         prefix: "",
-        suffix: "K",
+        suffix: "",
     },
     {
         id: 4,
@@ -63,7 +63,7 @@ const taskWidgets = [
         iconClass: "danger",
         decimals: 2,
         prefix: "$",
-        suffix: "%",
+        suffix: "",
     },
 ];
 
