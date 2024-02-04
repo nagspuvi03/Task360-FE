@@ -1,18 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Card, CardBody, CardHeader, Col, Container, ListGroup, ListGroupItem, Modal, ModalBody, ModalFooter, ModalHeader, Row } from 'reactstrap';
 import BreadCrumb from '../../../Components/Common/BreadCrumb';
-import SimpleBar from 'simplebar-react';
 import { Link } from 'react-router-dom';
 import List from 'list.js';
-//Import Flatepicker
 import Flatpickr from "react-flatpickr";
-
-// Import Images
-import avatar1 from "../../../assets/images/users/avatar-1.jpg";
-import avatar2 from "../../../assets/images/users/avatar-2.jpg";
-import avatar3 from "../../../assets/images/users/avatar-3.jpg";
-import avatar4 from "../../../assets/images/users/avatar-4.jpg";
-import avatar5 from "../../../assets/images/users/avatar-5.jpg";
 
 const ListTables = () => {
     const [modal_list, setmodal_list] = useState(false);
@@ -71,13 +62,13 @@ const ListTables = () => {
         });
     });
 
-    document.title = "Listjs | Task360";
+    document.title = "Users List | Task360";
 
     return (
         <React.Fragment>
             <div className="page-content">
                 <Container fluid>
-                    <BreadCrumb title="Listjs" pageTitle="Tables" />
+                    <BreadCrumb title="Users" pageTitle="Tables" />
                     <Row>
                         <Col lg={12}>
                             <Card>

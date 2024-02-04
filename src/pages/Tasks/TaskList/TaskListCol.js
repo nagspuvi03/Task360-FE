@@ -7,7 +7,7 @@ const handleValidDate = (dateStr) => {
   if (!date.isValid()) {
     return 'Invalid date';
   }
-  return date.format("DD MMM Y");
+  return date.format("DD MMM YYYY");
 };
 
 

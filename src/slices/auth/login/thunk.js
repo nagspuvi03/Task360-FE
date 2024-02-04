@@ -37,15 +37,12 @@ export const loginUser = (user, navigate) => async (dispatch) => {
 
 export const logoutUser = () => async (dispatch) => {
   try {
-    sessionStorage.removeItem("authUser");
-    let fireBaseBackend = getFirebaseBackend();
-    if (process.env.REACT_APP_DEFAULTAUTH === "firebase") {
-      const response = fireBaseBackend.logout;
-      dispatch(logoutUserSuccess(response));
-    } else {
-      dispatch(logoutUserSuccess(true));
-    }
-
+    sessionStorage.removeItem("authToken");
+    sessionStorage.removeItem("userName");
+    sessionStorage.removeItem("userEmail");
+    sessionStorage.removeItem("userId");
+    sessionStorage.removeItem("userRole");
+    dispatch(logoutUserSuccess(true));
   } catch (error) {
     dispatch(apiError(error));
   }

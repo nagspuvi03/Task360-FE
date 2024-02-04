@@ -1,25 +1,12 @@
-import PropTypes from "prop-types";
 import React, { useEffect } from "react";
 import { Navigate } from "react-router-dom";
-
 import { logoutUser } from "../../slices/thunks";
-
-//redux
 import { useSelector, useDispatch } from "react-redux";
 
-import withRouter from "../../Components/Common/withRouter";
-import { createSelector } from "reselect";
-
-const Logout = (props) => {
+const Logout = () => {
   const dispatch = useDispatch();
 
-
-  const logoutData = createSelector(
-    (state) => state.Dashboard.productOverviewChart,
-    (isUserLogout) => isUserLogout
-  );
-  // Inside your component
-  const isUserLogout = useSelector(logoutData);
+  const isUserLogout = useSelector((state) => state.Login.isUserLogout);
 
   useEffect(() => {
     dispatch(logoutUser());
@@ -32,9 +19,4 @@ const Logout = (props) => {
   return <></>;
 };
 
-Logout.propTypes = {
-  history: PropTypes.object,
-};
-
-
-export default withRouter(Logout);
+export default Logout;
