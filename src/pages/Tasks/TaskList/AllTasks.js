@@ -1,24 +1,17 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, forwardRef } from 'react';
 import TableContainer from '../../../Components/Common/TableContainer';
 import DeleteModal from "../../../Components/Common/DeleteModal";
 
-// Import Scroll Bar - SimpleBar
-import SimpleBar from 'simplebar-react';
-
 //Import Flatepicker
 import Flatpickr from "react-flatpickr";
-import { Col, Modal, ModalBody, Row, Label, Input, Button, ModalHeader, FormFeedback, Form } from 'reactstrap';
+import { Col, Input, Button } from 'reactstrap';
 
-import {
-  OrdersId,
-  handleValidDate
-} from "./TaskListCol";
+import { OrdersId, handleValidDate} from "./TaskListCol";
 
 import { Link } from 'react-router-dom';
 import moment from 'moment';
 
 const AllTasks = () => {
-  const [isEdit, setIsEdit] = useState(false);
   const [TaskList, setTaskList] = useState([
     {
         id: 1,
@@ -29,13 +22,13 @@ const AllTasks = () => {
         function: "Office",
         assigned: "Yes",
         taskType: "Project",
-        dueDate: "25 Jan, 2022",
+        dueDate: "04 Feb, 2024",
         status: "Not Completed",
-        priority: "High",
+        priority: "A",
         responsibility: "Nagappan",
         active: "Active",
-        logDate: "28 Jan, 2022",
-        statusDate: "27 Jan, 2022",
+        logDate: "04 Feb, 2024",
+        statusDate: "04 Feb, 2024",
         timeTaken: 36,
         remarks: "Good"
     },
@@ -48,13 +41,13 @@ const AllTasks = () => {
         function: "Mechanical",
         assigned: "Yes",
         taskType: "Direct",
-        dueDate: "20 Dec, 2021",
+        dueDate: "04 Feb, 2024",
         status: "Pending",
-        priority: "Low",
+        priority: "C",
         responsibility: "Purushoth",
         active: "Active",
-        logDate: "28 Jan, 2022",
-        statusDate: "27 Jan, 2022",
+        logDate: "04 Feb, 2024",
+        statusDate: "04 Feb, 2024",
         timeTaken: 36,
         remarks: "Good"
     },
@@ -67,13 +60,13 @@ const AllTasks = () => {
         function: "Electrical",
         assigned: "Yes",
         taskType: "Project",
-        dueDate: "20 Dec, 2021",
+        dueDate: "04 Feb, 2024",
         status: "Accepted",
-        priority: "Low",
+        priority: "C",
         responsibility: "Purushoth",
         active: "Active",
-        logDate: "28 Jan, 2022",
-        statusDate: "27 Jan, 2022",
+        logDate: "04 Feb, 2024",
+        statusDate: "04 Feb, 2024",
         timeTaken: 36,
         remarks: "Good"
     },
@@ -86,18 +79,18 @@ const AllTasks = () => {
         function: "General",
         assigned: "No",
         taskType: "Project",
-        dueDate: "20 Dec, 2021",
+        dueDate: "04 Feb, 2024",
         status: "Closed",
-        priority: "Medium",
+        priority: "B",
         responsibility: "Purushoth",
         active: "Inactive",
-        logDate: "28 Jan, 2022",
-        statusDate: "27 Jan, 2022",
+        logDate: "04 Feb, 2024",
+        statusDate: "04 Feb, 2024",
         timeTaken: 36,
         remarks: "Good"
     },
   ]);
-  const [modal, setModal] = useState(false);
+
   const [editableRowId, setEditableRowId] = useState(null);
   const [originalRowData, setOriginalRowData] = useState({});
   const [editedRowData, setEditedRowData] = useState({});
@@ -106,50 +99,54 @@ const AllTasks = () => {
   const [lastId, setLastId] = useState(4);
   const [lastTaskId, setLastTaskId] = useState(0);
   const [newTaskIds, setNewTaskIds] = useState([]);
+  const [selectedRowIds, setSelectedRowIds] = useState({});
+  const [selectAllChecked, setSelectAllChecked] = useState(false);
+  const [isCreatingTask, setIsCreatingTask] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
+  const [triggerAnimation, setTriggerAnimation] = useState(false);
+  const [mode, setMode] = useState(null);
 
-  const toggle = useCallback(() => {
-      setModal(!modal);
-  }, [modal]);
-
-  const updateMyData = (rowIndex, columnId, value) => {
-  setTaskList(old =>
-    old.map((row, index) => {
-      if (index === rowIndex) {
-        return {
-          ...old[rowIndex],
-          [columnId]: value,
-        };
-      }
-      return row;
-    })
-  );
-};
-
+  const updateMyData = (id, columnId, value) => {
+    setTaskList(old =>
+      old.map((row) => {
+        if (row.id === id) {
+          return {
+            ...row,
+            [columnId]: value,
+          };
+        }
+        return row;
+      })
+    );
+  };
 
   const EditableCell = ({
-  initialValue,
-  row,
-  column,
-  updateMyData,
-}) => {
-  const [value, setValue] = useState(initialValue);
+    initialValue,
+    taskId,
+    column,
+    updateMyData,
+  }) => {
+    const [value, setValue] = useState(initialValue);
 
-  const onChange = e => {
-    setValue(e.target.value);
+    const onChange = e => {
+      setValue(e.target.value);
+      console.log(`onChange: ${column.id} = ${e.target.value}`);
+    };
+
+    const onBlur = () => {
+      updateMyData(taskId, column.id, value);
+      console.log(`onBlur: Committing ${column.id} = ${value}`);
+    };
+
+    useEffect(() => {
+      setValue(initialValue);
+    }, [initialValue]);
+
+    return <Input value={value || ''} onChange={onChange} onBlur={onBlur} />;
   };
-
-  const onBlur = () => {
-    updateMyData(row.index, column.id, value);
-  };
-
-  useEffect(() => {
-    setValue(initialValue);
-  }, [initialValue]);
-
-  return <input value={value || ''} onChange={onChange} onBlur={onBlur} />;
-};
 
   const handleCreateTask = () => {
+    setIsCreatingTask(true);
     const newId = lastId + 1;
     setLastId(newId);
 
@@ -161,7 +158,7 @@ const AllTasks = () => {
       customer: "",
       function: "",
       task: "",
-      priority: "High",
+      priority: "A",
       assigned: "No",
       responsibility: "",
       dueDate: moment().format('YYYY-MM-DD'),
@@ -171,12 +168,18 @@ const AllTasks = () => {
       remarks: "",
       timeTaken: "",
       active: "Active",
-    }
-    setTaskList([newTask, ...TaskList]);
+      createdAt: new Date().toISOString(),
+    };
+    setTaskList(prevTaskList => [newTask, ...prevTaskList]);
     setEditableRowId(newId);
-    setNewTaskIds([...newTaskIds, newId]);
+    setNewTaskIds(prevNewTaskIds => [...prevNewTaskIds, newId]);
     setEditedRowData(newTask);
-  }
+    setMode('create');
+  };
+
+  const sortedTaskList = useMemo(() => {
+    return [...TaskList].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  }, [TaskList]);
 
   const generateNextTaskId = () => {
     const nextTaskId = lastTaskId + 1;
@@ -189,20 +192,18 @@ const AllTasks = () => {
     setEditableRowId(taskData.id);
     setOriginalRowData(taskData);
 
-    const isCreatingNewTask = !taskData.dueDate && !taskData.logDate && !taskData.statusDate;
-
     setEditedRowData({
       ...taskData,
-      // dueDate: taskData.dueDate ? moment(taskData.dueDate, 'DD MMM Y').format('YYYY-MM-DD') : "", 
-      // logDate: taskData.logDate ? moment(taskData.logDate, 'DD MMM Y').format('YYYY-MM-DD') : "", 
-      // statusDate: isCreatingNewTask ? moment().format('YYYY-MM-DD') : moment(taskData.statusDate, 'DD MMM Y').format('YYYY-MM-DD'),
-      dueDate: taskData.dueDate ? moment(taskData.dueDate, 'DD MMM Y').format('YYYY-MM-DD') : '', 
-      logDate: taskData.logDate ? moment(taskData.logDate, 'DD MMM Y').format('YYYY-MM-DD') : '', 
-      statusDate: taskData.statusDate ? moment(taskData.statusDate, 'DD MMM Y').format('YYYY-MM-DD') : '',
+      dueDate: taskData.dueDate, 
+      logDate: taskData.logDate, 
+      statusDate: taskData.statusDate,
     });
+    setMode('edit');
   };
 
   const handleCancelClick = () => {
+    setValidationErrors({});
+    setTriggerAnimation(false);
     if (newTaskIds.includes(editableRowId)) {
       setTaskList(TaskList.filter(task => task.id !== editableRowId));
       setNewTaskIds(newTaskIds.filter(id => id !== editableRowId));
@@ -215,10 +216,20 @@ const AllTasks = () => {
     }
     setEditableRowId(null);
     setEditedRowData({});
+    setIsCreatingTask(false);
+    setMode(null);
+    scrollToCheckbox();
   };
 
   const handleApplyClick = () => {
-    setTaskList(prevTaskList => {
+    if(validateFields()) {
+      console.log('Applying changes:', TaskList);
+      console.log('Single edited row data (if applicable):', editedRowData);
+      setValidationErrors({});
+      setTriggerAnimation(false);
+
+      console.log('Applying editedRowData:', editedRowData);
+      setTaskList(prevTaskList => {
       if (newTaskIds.includes(editableRowId)) {
         return prevTaskList.map(task => task.id === editableRowId ? editedRowData : task);
       } else {
@@ -229,44 +240,147 @@ const AllTasks = () => {
           return task;
         });
       }
-    });
-    setEditableRowId(null);
-    setEditedRowData({});
-    setNewTaskIds(prevIds => prevIds.filter(id => id !== editableRowId));
+      });
+
+      setEditableRowId(null);
+      setEditedRowData({});
+      setIsCreatingTask(false);
+      setNewTaskIds(prevIds => prevIds.filter(id => id !== editableRowId));
+      scrollToCheckbox();
+      setMode(null);
+    } else {
+      setTriggerAnimation(!triggerAnimation);
+      scrollToFirstError();
+      return;
+    }
+  };
+
+  const handleUpdateClick = () => {
+    if(validateEditFields()) {
+      setValidationErrors({});
+      setTriggerAnimation(false);
+
+      console.log('Applying editedRowData:', editedRowData);
+      setTaskList(prevTaskList => {
+      if (newTaskIds.includes(editableRowId)) {
+        return prevTaskList.map(task => task.id === editableRowId ? editedRowData : task);
+      } else {
+        return prevTaskList.map(task => {
+          if (task.id === editableRowId) {
+            return { ...task, ...editedRowData };
+          }
+          return task;
+        });
+      }
+      });
+
+      setEditableRowId(null);
+      setEditedRowData({});
+      setIsCreatingTask(false);
+      setNewTaskIds(prevIds => prevIds.filter(id => id !== editableRowId));
+      scrollToCheckbox();
+      setMode(null);
+    } else {
+      setTriggerAnimation(!triggerAnimation);
+      scrollToFirstError();
+      return;
+    }
   };
 
   const handleEditChange = (value, accessor) => {
-    console.log(`handleEditChange called for ${accessor} with value: ${value}`);
     if(['dueDate', 'logDate', 'statusDate'].includes(accessor)) {
       value = moment(value).format('YYYY-MM-DD');
     }
+
     let updatedData = { ...editedRowData, [accessor]: value };
+    
     if (accessor === "taskType" && newTaskIds.includes(editableRowId)) {
       if (value === "Direct") {
         updatedData = {
           ...updatedData,
           project: "",
           responsibility: "",
-          status: "",
-          statusDate: "",
-          active: "",
+          status: "New",
+          statusDate: moment().format('YYYY-MM-DD'),
+          active: "Active",
         };
       } else if (value === "Project") {
           updatedData = {
             ...updatedData,
             responsibility: "",
-            status: "",
-            statusDate: "",
-            active: "",
+            status: "New",
+            statusDate: moment().format('YYYY-MM-DD'),
+            active: "Active",
           };
       }
     }
+
+    if (accessor === "status" && editedRowData.status !== value) {
+      updatedData.statusDate = moment().format('YYYY-MM-DD')
+    }
+
     setEditedRowData(updatedData);
+
+    if (accessor === "assigned") {
+      if (value === "No") {
+        updatedData = { ...updatedData, responsibility: "" };
+        setEditedRowData(updatedData);
+        setValidationErrors(prevErrors => {
+          const newErrors = { ...prevErrors };
+          delete newErrors.responsibility;
+          return newErrors;
+        });
+      }
+    } else if (accessor === "responsibility" && value !== "") {
+      setValidationErrors(prevErrors => {
+        const newErrors = { ...prevErrors };
+        delete newErrors[accessor];
+        return newErrors;
+      });
+    }
+
+    if (value === "" || (accessor === "responsibility" && updatedData.assigned === "Yes" && value === "")) {
+      setValidationErrors(prevErrors => ({ ...prevErrors, [accessor]: true }));
+    } else {
+      setValidationErrors(prevErrors => {
+        const newErrors = { ...prevErrors };
+        delete newErrors[accessor];
+        return newErrors;
+      });
+    }
+
+    if (accessor === "taskType") {
+      if (value === "Direct") {
+        updatedData = { ...updatedData, project: "" };
+        setEditedRowData(updatedData);
+        setValidationErrors(prevErrors => {
+          const newErrors = { ...prevErrors };
+          delete newErrors.project;
+          return newErrors;
+        });
+      }
+    } else if (accessor === "project" && value !== "") {
+      setValidationErrors(prevErrors => {
+        const newErrors = { ...prevErrors };
+        delete newErrors[accessor];
+        return newErrors;
+      });
+    }
+
+    if (value === "" || (accessor === "project" && updatedData.taskType === "Project" && value === "")) {
+      setValidationErrors(prevErrors => ({ ...prevErrors, [accessor]: true }));
+    } else {
+      setValidationErrors(prevErrors => {
+        const newErrors = { ...prevErrors };
+        delete newErrors[accessor];
+        return newErrors;
+      });
+    }
   };
 
   const handleDeleteClick = (taskId) => {
     setShowDeleteModal(true);
-    setTaskToDelete(taskId);
+    setTaskToDelete([taskId]);
   }
 
   const handleCloseDeleteModal = () => {
@@ -275,25 +389,209 @@ const AllTasks = () => {
   }
 
   const handleConfirmDelete = () => {
-    if(taskToDelete !== null) {
-      setTaskList((currentTaskList) => currentTaskList.filter((task) => task.id !== taskToDelete));
+    if (taskToDelete && taskToDelete.length > 0) {
+      setTaskList(currentTaskList => currentTaskList.filter(task => !taskToDelete.includes(task.id)));
       setShowDeleteModal(false);
-      setTaskToDelete(null);
+      clearSelection();
+      setSelectAllChecked(false);
+      setSelectedRowIds({});
+      setEditableRowId(null);
+      setEditedRowData({});
     }
-  }
+  };
+
+  const handleSelectRow = (id) => {
+    setSelectedRowIds(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
+  const triggerDeleteModal = () => {
+    const selectedIds = Object.keys(selectedRowIds).map(id => parseInt(id));
+    setShowDeleteModal(true);
+    setTaskToDelete(selectedIds);
+  };
+
+  const clearSelection = () => {
+    setSelectedRowIds({});
+    setEditableRowId(null);
+    setEditedRowData({});
+  };
+
+  const handleSelectAllChange = (e) => {
+    const checked = e.target.checked;
+    if (checked) {
+      const allIds = TaskList.map(task => task.id);
+      setSelectedRowIds(allIds.reduce((acc, id) => ({ ...acc, [id]: true }), {}));
+    } else {
+      setSelectedRowIds({});
+    }
+  };
+
+  const validateFields = () => {
+    let errors = {};
+    let isValid = true;
+
+    if (!editedRowData.taskType) {
+      errors.taskType = true;
+      isValid = false;
+    }
+    if (editedRowData.taskType === 'Project' && !editedRowData.project) {
+      errors.project = true;
+      isValid = false;
+    }
+    if (!editedRowData.task || editedRowData.task.trim() === '') {
+      errors.task = true;
+      isValid = false;
+    }
+    if (!editedRowData.function) {
+      errors.function = true;
+      isValid = false;
+    }
+    if (!editedRowData.priority) {
+      errors.priority = true;
+      isValid = false;
+    }
+    if (!editedRowData.assigned) {
+      errors.assigned = true;
+      isValid = false;
+    }
+    if (editedRowData.assigned === 'Yes' && !editedRowData.responsibility) {
+      errors.responsibility = true;
+      isValid = false;
+    }
+
+    setValidationErrors(errors);
+    console.log("Validation errors in create mode:", errors);
+    return isValid;
+  };
+
+  const validateEditFields = () => {
+    let errors = {};
+    let isValid = true;
+
+    if (!editedRowData.taskType) {
+      errors.taskType = true;
+      isValid = false;
+    }
+    if (editedRowData.taskType === 'Project' && !editedRowData.project) {
+      errors.project = true;
+      isValid = false;
+    }
+    if (!editedRowData.task || editedRowData.task.trim() === '') {
+      errors.task = true;
+      isValid = false;
+    }
+    if (!editedRowData.function) {
+      errors.function = true;
+      isValid = false;
+    }
+    if (!editedRowData.priority) {
+      errors.priority = true;
+      isValid = false;
+    }
+    if (!editedRowData.assigned) {
+      errors.assigned = true;
+      isValid = false;
+    }
+    if (editedRowData.assigned === 'Yes' && !editedRowData.responsibility) {
+      errors.responsibility = true;
+      isValid = false;
+    }
+    if (!editedRowData.remarks || editedRowData.remarks.trim() === '') {
+      errors.remarks = true;
+      isValid = false;
+    }
+    const timeTakenValue = parseFloat(editedRowData.timeTaken.replace(/\s+/g, ''));
+    if (!editedRowData.timeTaken || editedRowData.timeTaken.includes(" ") || timeTakenValue <= 0) {
+      errors.timeTaken = true;
+      isValid = false;
+    }
+
+    setValidationErrors(errors);
+    console.log("Validation errors in edit mode:", errors);
+    return isValid;
+  };
+
+  const scrollToFirstError = () => {
+    const fieldOrder = ['taskType', 'project', 'customer', 'function', 'task', 'priority', 'assigned', 'responsibility', 'dueDate', 'logDate', 'taskStatus', 'statusDate', 'remarks', 'timeTaken', 'active'];
+    
+    for (let field of fieldOrder) {
+      if (validationErrors[field]) {
+        const element = document.getElementById(field);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          break;
+        }
+      }
+    }
+  };
+
+  const scrollToCheckbox = () => {
+    const firstCheckbox = document.querySelector('.table tbody tr:first-child td:first-child input[type="checkbox"]');
+    if (firstCheckbox) {
+      firstCheckbox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
+  useEffect(() => {
+    if (Object.keys(validationErrors).length > 0) {
+        scrollToFirstError();
+    }
+  }, [validationErrors]);
+
+  const errorStyle = {
+    border: '1px solid red',
+  };
+
+  const errorAnimation = `
+    @keyframes shake {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+      100% { transform: translateX(0); }
+    }
+  `;
 
   const getCellStyle = (isEditing) => {
     return isEditing ? { minWidth: '150px' } : {};
   };
 
+  const IndeterminateCheckbox = forwardRef(({ indeterminate, ...rest }, ref) => {
+    const defaultRef = React.useRef();
+    const resolvedRef = ref || defaultRef;
+
+    React.useEffect(() => {
+      resolvedRef.current.indeterminate = indeterminate;
+    }, [resolvedRef, indeterminate]);
+
+    return (
+      <Input type="checkbox" ref={resolvedRef} {...rest} />
+    );
+  });
+
+  const isCreateOrEditMode = editableRowId !== null || newTaskIds.length > 0;
+
   const columns = useMemo(
     () => [
       {
-        Header: <input type="checkbox" id="checkBoxAll" className="form-check-input" onClick={() => checkedAll()} />,
-        Cell: (cellProps) => {
-          return <input type="checkbox" className="taskCheckBox form-check-input" value={cellProps.row.original._id} onChange={() => deleteCheckbox()} />;
-        },
-        id: '#',
+        Header: () => (
+          <IndeterminateCheckbox
+            indeterminate={Object.keys(selectedRowIds).length > 0 && Object.keys(selectedRowIds).length < TaskList.length}
+            checked={Object.keys(selectedRowIds).length === TaskList.length}
+            onChange={handleSelectAllChange}
+            disabled={isCreateOrEditMode}
+          />
+        ),
+        id: 'selection',
+        Cell: ({ row }) => (
+          <IndeterminateCheckbox
+            checked={selectedRowIds[row.original.id] === true}
+            onChange={() => handleSelectRow(row.original.id)}
+            disabled={isCreateOrEditMode}
+          />
+        ),
       },
       {
         Header: "Task ID",
@@ -313,12 +611,18 @@ const AllTasks = () => {
           if(isEditing) {
             return (
               <Input
+                id='taskType'
                 type='select'
                 value={editedRowData.taskType ?? "Direct"}
                 onChange={(e) => 
                   handleEditChange(e.target.value, "taskType")
                 }
-                style={cellStyle}
+                style={{
+                  ...cellStyle,
+                  ...(validationErrors.taskType && errorStyle),
+                  animation: validationErrors.taskType ? 'shake 0.5s' : 'none'
+                }}
+                key={`task-${triggerAnimation}`}
               >
                 <option value="Project">Project</option>
                 <option value="Direct">Direct</option>
@@ -345,13 +649,18 @@ const AllTasks = () => {
           if(isEditing) {
             return (
               <Input
+                id='project'
                 type='select'
                 value={editedRowData.project ?? ""}
                 onChange={(e) => 
                   handleEditChange(e.target.value, "project")
                 }
-                style={cellStyle}
-                disabled={editedRowData.taskType === "Direct" && newTaskIds.includes(editableRowId)}
+                style={{
+                  ...cellStyle,
+                  ...(validationErrors.project && errorStyle),
+                  animation: validationErrors.project ? 'shake 0.5s' : 'none'
+                }}
+                disabled={editedRowData.taskType !== "Project"}
               >
                 <option value="">Select</option>
                 <option value="Task360">Task360</option>
@@ -373,6 +682,7 @@ const AllTasks = () => {
           if(isEditing) {
             return (
               <Input
+                id='customer'
                 type='select'
                 value={editedRowData.customer ?? ""}
                 onChange={(e) => 
@@ -400,12 +710,18 @@ const AllTasks = () => {
           if(isEditing) {
             return (
               <Input
+                id='function'
                 type='select'
                 value={editedRowData.function ?? ""}
                 onChange={(e) => 
                   handleEditChange(e.target.value, "function")
                 }
-                style={cellStyle}
+                style={{
+                  ...cellStyle,
+                  ...(validationErrors.function && errorStyle),
+                  animation: validationErrors.function ? 'shake 0.5s' : 'none'
+                }}
+                key={`task-${triggerAnimation}`}
               >
                 <option value="">Select</option>
                 <option value="Mechanical">Mechanical</option>
@@ -424,19 +740,29 @@ const AllTasks = () => {
         filterable: false,
         Cell: ({ row }) => {
           const isEditing = row.original.id === editableRowId;
+          const { status } = row.original;
           const cellStyle = getCellStyle(isEditing);
           if(isEditing) {
             return (
               <Input
+                id='task'
                 type='text'
                 value={editedRowData.task}
                 onChange={(e) => 
                   handleEditChange(e.target.value, "task")
                 }
-                style={cellStyle}
+                style={{
+                  ...cellStyle,
+                  ...(validationErrors.task && errorStyle),
+                  animation: validationErrors.task ? 'shake 0.5s' : 'none'
+                }}
+                key={`task-${triggerAnimation}`}
               />
             );
           };
+          
+          const isEditableStatus = !["Completed", "Closed", "Removed"].includes(status);
+
           return (
             <div className="d-flex">
               <div className="flex-grow-1 tasks_name">{row.original.task}</div>
@@ -447,11 +773,13 @@ const AllTasks = () => {
                       <i className="ri-eye-fill align-bottom me-2 text-muted"></i>
                     </Link>
                   </li>
-                  <li className="list-inline-item">
-                    <Link to="#" onClick={() => handleEditClick(row.original)}>
-                      <i className="ri-pencil-fill align-bottom me-2 text-muted"></i>
-                    </Link>
-                  </li>
+                  {isEditableStatus && (
+                    <li className="list-inline-item">
+                      <Link to="#" onClick={() => handleEditClick(row.original)}>
+                        <i className="ri-pencil-fill align-bottom me-2 text-muted"></i>
+                      </Link>
+                    </li>
+                  )}
                   <li className="list-inline-item">
                     <Link to="#" className="remove-item-btn" onClick={() => handleDeleteClick(row.original.id)}>
                       <i className="ri-delete-bin-fill align-bottom me-2 text-muted"></i>
@@ -473,23 +801,29 @@ const AllTasks = () => {
           if(isEditing) {
             return (
               <Input
+                id='priority'
                 type='select'
-                value={editedRowData.priority ?? "High"}
+                value={editedRowData.priority ?? "A"}
                 onChange={(e) => 
                   handleEditChange(e.target.value, "priority")
                 }
-                style={cellStyle}
+                style={{
+                  ...cellStyle,
+                  ...(validationErrors.priority && errorStyle),
+                  animation: validationErrors.priority ? 'shake 0.5s' : 'none'
+                }}
+                key={`task-${triggerAnimation}`}
               >
-                <option value="High">High</option>
-                <option value="Medium">Medium</option>
-                <option value="Low">Low</option>
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
               </Input>
             );
           }
           let badgeClass = '';
-          if (row.original.priority === "High") badgeClass = "bg-danger";
-          if (row.original.priority === "Medium") badgeClass = "bg-warning";
-          if (row.original.priority === "Low") badgeClass = "bg-success";
+          if (row.original.priority === "A") badgeClass = "bg-danger";
+          if (row.original.priority === "B") badgeClass = "bg-warning";
+          if (row.original.priority === "C") badgeClass = "bg-success";
           return (
             <span className={`badge ${badgeClass} text-uppercase`}>
               {row.original.priority}
@@ -507,12 +841,18 @@ const AllTasks = () => {
           if(isEditing) {
             return (
               <Input
+                id='assigned'
                 type='select'
                 value={editedRowData.assigned ?? "No"}
                 onChange={(e) => 
                   handleEditChange(e.target.value, "assigned")
                 }
-                style={cellStyle}
+                style={{
+                  ...cellStyle,
+                  ...(validationErrors.assigned && errorStyle),
+                  animation: validationErrors.assigned ? 'shake 0.5s' : 'none'
+                }}
+                key={`task-${triggerAnimation}`}
               >
                 <option value="Yes">Yes</option>
                 <option value="No">No</option>
@@ -539,13 +879,19 @@ const AllTasks = () => {
           if(isEditing) {
             return (
               <Input
+                id='responsibility'
                 type='select'
                 value={editedRowData.responsibility ?? ""}
                 onChange={(e) => 
                   handleEditChange(e.target.value, "responsibility")
                 }
-                style={cellStyle}
-                disabled={(editedRowData.taskType === "Direct" || editedRowData.taskType === "Project") && newTaskIds.includes(editableRowId)}
+                style={{
+                  ...cellStyle,
+                  ...(validationErrors.responsibility && errorStyle),
+                  animation: validationErrors.responsibility ? 'shake 0.5s' : 'none'
+                }}
+                key={`task-${triggerAnimation}`}
+                disabled={editedRowData.assigned !== "Yes"}
               >
                 <option value="">Select</option>
                 <option value="Vijayan">Vijayan</option>
@@ -568,6 +914,7 @@ const AllTasks = () => {
             return (
               <div style={cellStyle}>
                 <Flatpickr
+                  id='dueDate'
                   value={new Date(editedRowData.dueDate)}
                   onChange={([date]) => {
                     handleEditChange(moment(date).format('YYYY-MM-DD'), "dueDate");
@@ -596,6 +943,7 @@ const AllTasks = () => {
             return (
               <div style={cellStyle}>
                 <Flatpickr
+                  id='logDate'
                   value={new Date(editedRowData.logDate)}
                   onChange={([date]) => {
                     handleEditChange(moment(date).format('YYYY-MM-DD'), "logDate");
@@ -623,6 +971,7 @@ const AllTasks = () => {
           if(isEditing) {
             return (
               <Input
+                id='taskStatus'
                 type='select'
                 value={editedRowData.status ?? "New"}
                 onChange={(e) => 
@@ -686,7 +1035,8 @@ const AllTasks = () => {
             return (
               <div style={cellStyle}>
                 <Flatpickr
-                  value={editedRowData.statusDate ? new Date(editedRowData.statusDate) : new Date()}
+                  id='statusDate'
+                  value={new Date(editedRowData.statusDate)}
                   onChange={([date]) => {
                     handleEditChange(moment(date).format('YYYY-MM-DD'), "statusDate");
                   }}
@@ -695,7 +1045,7 @@ const AllTasks = () => {
                     altFormat: "F j, Y",
                     dateFormat: "Y-m-d"
                   }}
-                  disabled={(editedRowData.taskType === "Direct" || editedRowData.taskType === "Project") && newTaskIds.includes(editableRowId)}
+                  disabled
               />
               </div>
             );
@@ -706,18 +1056,27 @@ const AllTasks = () => {
       {
         Header: "Remarks",
         accessor: "remarks",
-        Cell: ({ row, column }) => {
+        Cell: ({ row }) => {
           const isEditing = row.original.id === editableRowId;
-    return isEditing ? (
-      <EditableCell
-        initialValue={row.values.remarks}
-        row={row}
-        column={column}
-        updateMyData={updateMyData}
-      />
-    ) : (
-      <>{row.values.remarks}</>
-    );
+          const cellStyle = getCellStyle(isEditing);
+          if(isEditing) {
+            return (
+              <Input
+                id='remarks'
+                type='text'
+                value={editedRowData.remarks}
+                onChange={(e) => 
+                  handleEditChange(e.target.value, "remarks")
+                }
+                style={{
+                  ...cellStyle,
+                  ...(validationErrors.remarks && errorStyle),
+                  animation: validationErrors.remarks ? 'shake 0.5s' : 'none'
+                }}
+              />
+            );
+          };
+          return <span>{row.original.remarks}</span>
         },
       },
       {
@@ -730,12 +1089,17 @@ const AllTasks = () => {
           if(isEditing) {
             return (
               <Input
+                id='timeTaken'
                 type='number'
                 value={editedRowData.timeTaken}
                 onChange={(e) => 
                   handleEditChange(e.target.value, "timeTaken")
                 }
-                style={cellStyle}
+                style={{
+                  ...cellStyle,
+                  ...(validationErrors.timeTaken && errorStyle),
+                  animation: validationErrors.taskType ? 'shake 0.5s' : 'none'
+                }}
               />
             );
           };
@@ -752,6 +1116,7 @@ const AllTasks = () => {
           if(isEditing) {
             return (
               <Input
+                id='active'
                 type='select'
                 value={editedRowData.active ?? "Active"}
                 onChange={(e) => 
@@ -781,6 +1146,9 @@ const AllTasks = () => {
 
   return (
     <React.Fragment>
+      <style>
+        {errorAnimation}
+      </style>
       <div className="row">
         <Col lg={12}>
           <div className="card" id="tasksList">
@@ -789,25 +1157,50 @@ const AllTasks = () => {
                 <h5 className="card-title mb-0 flex-grow-1">All Tasks</h5>
                 <div className="flex-shrink-0">
                   <div className="d-flex flex-wrap gap-2">
-                    <button className="btn btn-danger add-btn me-1" onClick={() => { setIsEdit(false); toggle(); }}><i className="ri-add-line align-bottom me-1"></i> Import</button>
-                    <button className="btn btn-danger add-btn me-1" onClick={() => { setIsEdit(false); toggle(); }}><i className="ri-add-line align-bottom me-1"></i> Export</button>
-                    <button className="btn btn-danger add-btn me-1" onClick={handleCreateTask}><i className="ri-add-line align-bottom me-1"></i> Create Task</button>
-                    {editableRowId && (
+                    {Object.keys(selectedRowIds).length > 0 ? (
+                      <>
+                        <Button color='danger' onClick={triggerDeleteModal}>Delete</Button>
+                        <Button color='secondary' onClick={clearSelection}>Cancel</Button>
+                      </>
+                    ) : (
+                      <>
+                        {!isCreatingTask && !editableRowId && (
+                          <button className="btn btn-danger add-btn me-1" onClick={() => {}}><i className="ri-add-line align-bottom me-1"></i> Import</button>
+                        )}
+                        {TaskList.length > 0 && !isCreatingTask && !editableRowId && (
+                          <button className="btn btn-danger add-btn me-1" onClick={() => {}}><i className="ri-add-line align-bottom me-1"></i> Export</button>
+                        )}
+                        {!isCreatingTask && !editableRowId && TaskList.length > 0 && (
+                          <button className="btn btn-danger add-btn me-1" onClick={handleCreateTask}><i className="ri-add-line align-bottom me-1"></i> Create Task</button>
+                        )}
+                      </>
+                    )}
+                    {(isCreatingTask || editableRowId) && (
                       <>
                         <Button color='secondary' onClick={handleCancelClick}>Cancel</Button>
-                        <Button color='primary' onClick={handleApplyClick}>Apply</Button>
+                        {
+                          mode === 'create' && (
+                            <Button color='primary' onClick={handleApplyClick}>Apply</Button>
+                          )
+                        }
+                        {
+                          mode === 'edit' && (
+                            <Button color='primary' onClick={handleUpdateClick}>Update</Button>
+                          )
+                        }
                       </>
                     )}
                   </div>
                 </div>
               </div>
             </div>
-            <div className="card-body pt-0">
+            {TaskList.length > 0 ? (
+              <div className="card-body pt-0">
                 <TableContainer
                   columns={columns}
-                  data={TaskList}
+                  data={sortedTaskList}
                   isGlobalFilter={true}
-                  updateMyData={updateMyData}
+                  defaultSortBy={{ id: 'createdAt', desc: true }}
                   isAddUserList={false}
                   customPageSize={8}
                   className="custom-header-css"
@@ -818,7 +1211,16 @@ const AllTasks = () => {
                   isTaskListFilter={true}
                   SearchPlaceholder='Search for tasks or something...'
                 />
-            </div>
+              </div>
+            ) : (
+              <div className="card-body text-center">
+                <h5>No Tasks Found</h5>
+                <p>Click on "Create Task" to add new tasks.</p>
+                <button className="btn btn-danger add-btn" onClick={handleCreateTask}>
+                  <i className="ri-add-line align-bottom me-1"></i> Create Task
+                </button>
+              </div>
+            )}
           </div>
         </Col>
       </div>

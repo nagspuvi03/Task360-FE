@@ -2,10 +2,10 @@ import { createSlice } from "@reduxjs/toolkit";
 
 export const initialState = {
   user: {},
-  error: "", // for error message
+  error: "",
   loading: false,
   isUserLogout: false,
-  errorMsg: false, // for error
+  errorMsg: false,
 };
 
 const loginSlice = createSlice({
