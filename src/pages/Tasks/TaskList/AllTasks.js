@@ -1,96 +1,16 @@
 import React, { useState, useEffect, useMemo, forwardRef } from 'react';
 import TableContainer from '../../../Components/Common/TableContainer';
 import DeleteModal from "../../../Components/Common/DeleteModal";
-
-//Import Flatepicker
+import Loader from "../../../Components/Common/Loader";
 import Flatpickr from "react-flatpickr";
 import { Col, Input, Button } from 'reactstrap';
-
 import { OrdersId, handleValidDate} from "./TaskListCol";
-
 import { Link } from 'react-router-dom';
 import moment from 'moment';
+import axios from 'axios';
 
 const AllTasks = () => {
-  const [TaskList, setTaskList] = useState([
-    {
-        id: 1,
-        taskId: "#VLZ632",
-        project: "Task360",
-        task: "Error message when placing an orders?",
-        customer: "Akranta",
-        function: "Office",
-        assigned: "Yes",
-        taskType: "Project",
-        dueDate: "04 Feb, 2024",
-        status: "Not Completed",
-        priority: "A",
-        responsibility: "Nagappan",
-        active: "Active",
-        logDate: "04 Feb, 2024",
-        statusDate: "04 Feb, 2024",
-        timeTaken: 36,
-        remarks: "Good"
-    },
-    {
-        id: 2,
-        taskId: "#VLZ453",
-        project: "Task360",
-        task: "Profile Page Structure",
-        customer: "Akranta",
-        function: "Mechanical",
-        assigned: "Yes",
-        taskType: "Direct",
-        dueDate: "04 Feb, 2024",
-        status: "Pending",
-        priority: "C",
-        responsibility: "Purushoth",
-        active: "Active",
-        logDate: "04 Feb, 2024",
-        statusDate: "04 Feb, 2024",
-        timeTaken: 36,
-        remarks: "Good"
-    },
-    {
-        id: 3,
-        taskId: "#VLZ454",
-        project: "Task360",
-        task: "Profile Page Structure",
-        customer: "Akranta",
-        function: "Electrical",
-        assigned: "Yes",
-        taskType: "Project",
-        dueDate: "04 Feb, 2024",
-        status: "Accepted",
-        priority: "C",
-        responsibility: "Purushoth",
-        active: "Active",
-        logDate: "04 Feb, 2024",
-        statusDate: "04 Feb, 2024",
-        timeTaken: 36,
-        remarks: "Good"
-    },
-    {
-        id: 4,
-        taskId: "#VLZ455",
-        project: "Task360",
-        task: "Profile Page Structure",
-        customer: "Akranta",
-        function: "General",
-        assigned: "No",
-        taskType: "Project",
-        dueDate: "04 Feb, 2024",
-        status: "Closed",
-        priority: "B",
-        responsibility: "Purushoth",
-        active: "Inactive",
-        logDate: "04 Feb, 2024",
-        statusDate: "04 Feb, 2024",
-        timeTaken: 36,
-        remarks: "Good"
-    },
-  ]);
-
+  const [TaskList, setTaskList] = useState([]);
   const [editableRowId, setEditableRowId] = useState(null);
   const [originalRowData, setOriginalRowData] = useState({});
   const [editedRowData, setEditedRowData] = useState({});
@@ -105,6 +25,77 @@ const AllTasks = () => {
   const [validationErrors, setValidationErrors] = useState({});
   const [triggerAnimation, setTriggerAnimation] = useState(false);
   const [mode, setMode] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const [numberOfElements, setNumberOfElements] = useState(0);
+
+  const mapStatus = (status) => {
+    const statusMap = {
+      'PE': 'Pending',
+      'NW': 'New',
+      'CP': 'Completed',
+      'AC': 'Accepted',
+      'CL': 'Closed',
+      'NC': 'Not Completed',
+      'RM': 'Removed'
+    };
+    return statusMap[status] || status;
+  };
+
+  useEffect(() => {
+    const fetchTasks = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch(`https://task360.osc-fr1.scalingo.io/task-360/api/v1/task/getTasks?page=${currentPage}&pageSize=${pageSize}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            project: "",
+            customer: "",
+            fromDate: "",
+            toDate: "",
+            status: "",
+            responsibility: "",
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setTotalPages(data.totalPages);
+          setTotalElements(data.totalElements);
+          setNumberOfElements(data.numberOfElements);
+          const mappedTasks = data.content.map(task => ({
+            ...task,
+            taskType: task.type === 'D' ? 'Direct' : 'Project',
+            status: mapStatus(task.status),
+            project: task.projectNumber,
+            function: task.functionArea,
+            task: task.taskDescription,
+            assigned: task.assignedYn,
+            dueDate: task.proposedTarget
+          }));
+          setTaskList(mappedTasks);
+        } else {
+          console.error('Failed to fetch tasks: ', response.statusText);
+        }
+      } catch (error) {
+        console.error('Failed to fetch tasks:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTasks();
+  }, [currentPage, pageSize]);
+
+  const onPageChange = (newPage) => {
+    setCurrentPage(newPage);
+  };
 
   const updateMyData = (id, columnId, value) => {
     setTaskList(old =>
@@ -1095,6 +1086,7 @@ const AllTasks = () => {
                 onChange={(e) => 
                   handleEditChange(e.target.value, "timeTaken")
                 }
+                disabled={mode === 'create'}
                 style={{
                   ...cellStyle,
                   ...(validationErrors.timeTaken && errorStyle),
@@ -1194,33 +1186,44 @@ const AllTasks = () => {
                 </div>
               </div>
             </div>
-            {TaskList.length > 0 ? (
-              <div className="card-body pt-0">
-                <TableContainer
-                  columns={columns}
-                  data={sortedTaskList}
-                  isGlobalFilter={true}
-                  defaultSortBy={{ id: 'createdAt', desc: true }}
-                  isAddUserList={false}
-                  customPageSize={8}
-                  className="custom-header-css"
-                  divClass="table-responsive table-card mb-3"
-                  tableClass="align-middle table-nowrap mb-0"
-                  theadClass="table-light table-nowrap"
-                  thClass="table-light text-muted"
-                  isTaskListFilter={true}
-                  SearchPlaceholder='Search for tasks or something...'
-                />
-              </div>
+            {!isLoading ? (
+              TaskList.length > 0 ? (
+                <div className="card-body pt-0">
+                  <TableContainer
+                    columns={columns}
+                    data={TaskList}
+                    isGlobalFilter={true}
+                    defaultSortBy={{ id: 'createdAt', desc: true }}
+                    isAddUserList={false}
+                    className="custom-header-css"
+                    divClass="table-responsive table-card mb-3"
+                    tableClass="align-middle table-nowrap mb-0"
+                    theadClass="table-light table-nowrap"
+                    thClass="table-light text-muted"
+                    isTaskListFilter={true}
+                    SearchPlaceholder='Search for tasks or something...'
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={onPageChange}
+                    customPageSize={pageSize}
+                    totalElements={totalElements}
+                    numberOfElements={numberOfElements}
+                  />
+                </div>
             ) : (
-              <div className="card-body text-center">
-                <h5>No Tasks Found</h5>
-                <p>Click on "Create Task" to add new tasks.</p>
-                <button className="btn btn-danger add-btn" onClick={handleCreateTask}>
-                  <i className="ri-add-line align-bottom me-1"></i> Create Task
-                </button>
-              </div>
-            )}
+                <div className="card-body text-center">
+                  <h5>No Tasks Found</h5>
+                  <p>Click on "Create Task" to add new tasks.</p>
+                  <button className="btn btn-danger add-btn" onClick={handleCreateTask}>
+                    <i className="ri-add-line align-bottom me-1"></i> Create Task
+                  </button>
+                </div>
+            ) 
+          ) : (
+            <div className="card-body text-center">
+              <Loader />
+            </div>
+          )}
           </div>
         </Col>
       </div>

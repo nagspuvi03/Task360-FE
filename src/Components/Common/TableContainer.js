@@ -32,10 +32,15 @@ function GlobalFilter({
 const TableContainer = ({
   columns,
   data,
+  totalPages,
+  currentPage,
+  onPageChange,
+  customPageSize,
+  totalElements,
+  numberOfElements,
   isGlobalSearch,
   isGlobalFilter,
   isTaskListFilter,
-  customPageSize,
   tableClass,
   theadClass,
   trClass,
@@ -143,21 +148,21 @@ const TableContainer = ({
       <Row className="align-items-center mt-2 g-3 text-center text-sm-start">
         <div className="col-sm">
           <div className="text-muted">
-            Showing <span className="fw-semibold ms-1">{page.length}</span> of <span className="fw-semibold">{data.length}</span> Results
+            Showing<span className="fw-semibold ms-1">{numberOfElements}</span> of <span className="fw-semibold">{totalElements}</span> Results
           </div>
         </div>
         <div className="col-sm-auto">
           <ul className="pagination pagination-separated pagination-md justify-content-center justify-content-sm-start mb-0">
-            <li className={!canPreviousPage ? "page-item disabled" : "page-item"}>
-              <Button className="page-link" onClick={previousPage}>Previous</Button>
+            <li className={currentPage === 0 ? "page-item disabled" : "page-item"}>
+              <Button className="page-link" onClick={() => onPageChange(currentPage - 1)}>Previous</Button>
             </li>
-            {pageOptions.map((item, key) => (
-              <li key={key} className="page-item">
-                <Button className={pageIndex === item ? "page-link active" : "page-link"} onClick={() => gotoPage(item)}>{item + 1}</Button>
+            {Array.from({ length: totalPages }, (_, i) => (
+              <li key={i} className={currentPage === i ? "page-item active" : "page-item"}>
+                <Button className="page-link" onClick={() => onPageChange(i)}>{i + 1}</Button>
               </li>
             ))}
-            <li className={!canNextPage ? "page-item disabled" : "page-item"}>
-              <Button className="page-link" onClick={nextPage}>Next</Button>
+            <li className={currentPage === totalPages - 1 ? "page-item disabled" : "page-item"}>
+              <Button className="page-link" onClick={() => onPageChange(currentPage + 1)}>Next</Button>
             </li>
           </ul>
         </div>
