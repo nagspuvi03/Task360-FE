@@ -77,6 +77,12 @@ const TableContainer = ({
     useRowSelect,
   );
 
+  const getPaginationMessage = () => {
+    const startIndex = currentPage * customPageSize + 1;
+    const endIndex = startIndex + numberOfElements - 1;
+    return `Showing ${startIndex}-${endIndex} of ${totalElements} results`;
+  };
+
   const onChangeInSelect = (event) => {
     setPageSize(Number(event.target.value));
   };
@@ -142,7 +148,7 @@ const TableContainer = ({
       <Row className="align-items-center mt-2 g-3 text-center text-sm-start">
         <div className="col-sm">
           <div className="text-muted">
-            Showing<span className="fw-semibold ms-1">{numberOfElements}</span> of <span className="fw-semibold">{totalElements}</span> Results
+            {getPaginationMessage()}
           </div>
         </div>
         <div className="col-sm-auto">

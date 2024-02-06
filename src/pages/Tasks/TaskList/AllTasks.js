@@ -4,23 +4,20 @@ import DeleteModal from "../../../Components/Common/DeleteModal";
 import Loader from "../../../Components/Common/Loader";
 import Flatpickr from "react-flatpickr";
 import { Col, Input, Button } from 'reactstrap';
-import { OrdersId, handleValidDate} from "./TaskListCol";
+import { handleValidDate} from "./TaskListCol";
 import { Link } from 'react-router-dom';
 import moment from 'moment';
-import axios from 'axios';
 
 const AllTasks = () => {
   const [TaskList, setTaskList] = useState([]);
-  const [editableRowId, setEditableRowId] = useState(null);
+  const [editableTaskId, setEditableTaskId] = useState(null);
   const [originalRowData, setOriginalRowData] = useState({});
   const [editedRowData, setEditedRowData] = useState({});
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState(null);
-  const [lastId, setLastId] = useState(4);
-  const [lastTaskId, setLastTaskId] = useState(0);
+  const [lastId, setLastId] = useState(0);
   const [newTaskIds, setNewTaskIds] = useState([]);
   const [selectedRowIds, setSelectedRowIds] = useState({});
-  const [selectAllChecked, setSelectAllChecked] = useState(false);
   const [isCreatingTask, setIsCreatingTask] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
   const [triggerAnimation, setTriggerAnimation] = useState(false);
@@ -45,53 +42,52 @@ const AllTasks = () => {
     return statusMap[status] || status;
   };
 
-  useEffect(() => {
-    const fetchTasks = async () => {
-      setIsLoading(true);
-      try {
-        const response = await fetch(`https://task360.osc-fr1.scalingo.io/task-360/api/v1/task/getTasks?page=${currentPage}&pageSize=${pageSize}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            project: "",
-            customer: "",
-            fromDate: "",
-            toDate: "",
-            status: "",
-            responsibility: "",
-          }),
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setTotalPages(data.totalPages);
-          setTotalElements(data.totalElements);
-          setNumberOfElements(data.numberOfElements);
-          const mappedTasks = data.content.map(task => ({
-            ...task,
-            taskType: task.type === 'D' ? 'Direct' : 'Project',
-            status: mapStatus(task.status),
-            project: task.projectNumber,
-            function: task.functionArea,
-            task: task.taskDescription,
-            assigned: task.assignedYn,
-            dueDate: task.proposedTarget
-          }));
-          setTaskList(mappedTasks);
-        } else {
-          console.error('Failed to fetch tasks: ', response.statusText);
-        }
-      } catch (error) {
-        console.error('Failed to fetch tasks:', error);
-      } finally {
-        setIsLoading(false);
+  const fetchTasks = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`https://task360.osc-fr1.scalingo.io/task-360/api/v1/task/getTasks?page=${currentPage}&pageSize=${pageSize}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          project: "",
+          customer: "",
+          fromDate: "",
+          toDate: "",
+          status: "",
+          responsibility: "",
+        }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setTotalPages(data.totalPages);
+        setTotalElements(data.totalElements);
+        setNumberOfElements(data.numberOfElements);
+        const mappedTasks = data.content.map(task => ({
+          ...task,
+          taskType: task.type === 'D' ? 'Direct' : 'Project',
+          status: mapStatus(task.status),
+          project: task.projectNumber,
+          function: task.functionArea,
+          task: task.taskDescription,
+          assigned: task.assignedYn,
+          dueDate: task.proposedTarget
+        }));
+        setTaskList(mappedTasks);
+      } else {
+        console.error('Failed to fetch tasks: ', response.statusText);
       }
-    };
+    } catch (error) {
+      console.error('Failed to fetch tasks:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchTasks();
-  }, [currentPage, pageSize]);
+  }, [currentPage, pageSize]); 
 
   const onPageChange = (newPage) => {
     setCurrentPage(newPage);
@@ -100,7 +96,7 @@ const AllTasks = () => {
   const updateMyData = (id, columnId, value) => {
     setTaskList(old =>
       old.map((row) => {
-        if (row.id === id) {
+        if (row.taskId === id) {
           return {
             ...row,
             [columnId]: value,
@@ -138,12 +134,11 @@ const AllTasks = () => {
 
   const handleCreateTask = () => {
     setIsCreatingTask(true);
-    const newId = lastId + 1;
-    setLastId(newId);
+    const newTaskId = `new_${Date.now()}`;
 
     const newTask = {
-      id: newId,
-      taskId: generateNextTaskId(),
+      id: newTaskId,
+      taskId: newTaskId,
       taskType: "Direct",
       project: "",
       customer: "",
@@ -152,8 +147,8 @@ const AllTasks = () => {
       priority: "A",
       assigned: "No",
       responsibility: "",
-      dueDate: moment().format('YYYY-MM-DD'),
-      logDate: moment().format('YYYY-MM-DD'),
+      dueDate: "",
+      logDate: "",
       status: "New",
       statusDate: moment().format('YYYY-MM-DD'),
       remarks: "",
@@ -162,25 +157,14 @@ const AllTasks = () => {
       createdAt: new Date().toISOString(),
     };
     setTaskList(prevTaskList => [newTask, ...prevTaskList]);
-    setEditableRowId(newId);
-    setNewTaskIds(prevNewTaskIds => [...prevNewTaskIds, newId]);
+    setEditableTaskId(newTaskId);
+    setNewTaskIds(prevNewTaskIds => [...prevNewTaskIds, newTaskId]);
     setEditedRowData(newTask);
     setMode('create');
   };
 
-  const sortedTaskList = useMemo(() => {
-    return [...TaskList].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  }, [TaskList]);
-
-  const generateNextTaskId = () => {
-    const nextTaskId = lastTaskId + 1;
-    setLastTaskId(nextTaskId);
-    return `#PUVI${nextTaskId.toString().padStart(2, '0')}`;
-  };
-
-
   const handleEditClick = (taskData) => {
-    setEditableRowId(taskData.id);
+    setEditableTaskId(taskData.taskId);
     setOriginalRowData(taskData);
 
     setEditedRowData({
@@ -195,48 +179,97 @@ const AllTasks = () => {
   const handleCancelClick = () => {
     setValidationErrors({});
     setTriggerAnimation(false);
-    if (newTaskIds.includes(editableRowId)) {
-      setTaskList(TaskList.filter(task => task.id !== editableRowId));
-      setNewTaskIds(newTaskIds.filter(id => id !== editableRowId));
+    if (newTaskIds.includes(editableTaskId)) {
+      setTaskList(TaskList.filter(task => task.taskId !== editableTaskId));
+      setNewTaskIds(newTaskIds.filter(id => id !== editableTaskId));
     } else {
       setTaskList(prevTaskList =>
         prevTaskList.map(task =>
-          task.id === editableRowId ? originalRowData : task
+          task.taskId === editableTaskId ? originalRowData : task
         )
       );
     }
-    setEditableRowId(null);
+    setEditableTaskId(null);
     setEditedRowData({});
     setIsCreatingTask(false);
     setMode(null);
     scrollToCheckbox();
   };
 
-  const handleApplyClick = () => {
-    if(validateFields()) {
-      console.log('Applying changes:', TaskList);
-      console.log('Single edited row data (if applicable):', editedRowData);
+  const mapStatusToCode = (status) => {
+    const statusMap = {
+        'Pending': 'PE',
+        'New': 'NW',
+        'Completed': 'CP',
+        'Accepted': 'AC',
+        'Closed': 'CL',
+        'Not Completed': 'NC',
+        'Removed': 'RM',
+    };
+    return statusMap[status] || status;
+  };
+
+  const handleApplyClick = async () => {
+    if (validateFields()) {
+      setIsLoading(true);
+
+      const effectiveLogDate = editedRowData.logDate
+        ? moment(editedRowData.logDate).format('YYYY-MM-DD') + 'T00:00:00.000'
+        : "";
+
+      const taskData = {
+          type: editedRowData.taskType === 'Direct' ? 'D' : 'P',
+          projectNumber: editedRowData.project ? editedRowData.project : null,
+          customer: editedRowData.customer,
+          functionArea: editedRowData.function,
+          taskDescription: editedRowData.task,
+          priority: editedRowData.priority,
+          assignedYn: editedRowData.assigned,
+          responsibility: editedRowData.responsibility ? editedRowData.responsibility : null,
+          proposedTarget: editedRowData.dueDate,
+          targetDate: editedRowData.dueDate,
+          status: mapStatusToCode(editedRowData.status),
+          active: editedRowData.active,
+          logDate: effectiveLogDate,
+          statusDate: moment().utc().add(5, 'hours').add(30, 'minutes').format('YYYY-MM-DDTHH:mm:ss.SSS'),
+          remarks: editedRowData.remarks,
+          timeTaken: editedRowData.timeTaken,
+          dateCreated: moment().utc().add(5, 'hours').add(30, 'minutes').format('YYYY-MM-DDTHH:mm:ss.SSS'),
+          createdUser: sessionStorage.getItem('userId'),
+          dateModified: moment().utc().add(5, 'hours').add(30, 'minutes').format('YYYY-MM-DDTHH:mm:ss.SSS'),
+          modifiedUser: sessionStorage.getItem('userId'),
+          dateClosed: moment().utc().add(5, 'hours').add(30, 'minutes').format('YYYY-MM-DDTHH:mm:ss.SSS'),
+          dateRemoved: moment().utc().add(5, 'hours').add(30, 'minutes').format('YYYY-MM-DDTHH:mm:ss.SSS'),
+      };
+
+      try {
+        const response = await fetch('https://task360.osc-fr1.scalingo.io/task-360/api/v1/task', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+          },
+          body: JSON.stringify([taskData]),
+        });
+        const data = await response.json();
+        if (data.returnCode === 0) {
+          console.log('Task created successfully');
+          await fetchTasks();
+        } else {
+          console.error('Task Creation failed', data.returnMsg);
+        }
+      } catch (error) {
+        console.error('Failed to create task:', error);
+      } finally {
+        fetchTasks();
+        setIsLoading(false);
+      }
+
       setValidationErrors({});
       setTriggerAnimation(false);
-
-      console.log('Applying editedRowData:', editedRowData);
-      setTaskList(prevTaskList => {
-      if (newTaskIds.includes(editableRowId)) {
-        return prevTaskList.map(task => task.id === editableRowId ? editedRowData : task);
-      } else {
-        return prevTaskList.map(task => {
-          if (task.id === editableRowId) {
-            return { ...task, ...editedRowData };
-          }
-          return task;
-        });
-      }
-      });
-
-      setEditableRowId(null);
+      setEditableTaskId(null);
       setEditedRowData({});
       setIsCreatingTask(false);
-      setNewTaskIds(prevIds => prevIds.filter(id => id !== editableRowId));
+      setNewTaskIds(prevIds => prevIds.filter(id => id !== editableTaskId));
       scrollToCheckbox();
       setMode(null);
     } else {
@@ -246,30 +279,76 @@ const AllTasks = () => {
     }
   };
 
-  const handleUpdateClick = () => {
-    if(validateEditFields()) {
+  const handleUpdateClick = async () => {
+    if (validateEditFields()) {
+      setIsLoading(true);
       setValidationErrors({});
       setTriggerAnimation(false);
 
-      console.log('Applying editedRowData:', editedRowData);
-      setTaskList(prevTaskList => {
-      if (newTaskIds.includes(editableRowId)) {
-        return prevTaskList.map(task => task.id === editableRowId ? editedRowData : task);
-      } else {
-        return prevTaskList.map(task => {
-          if (task.id === editableRowId) {
-            return { ...task, ...editedRowData };
-          }
-          return task;
-        });
-      }
-      });
+      const logDateWasModified = editedRowData.logDate !== originalRowData.logDate;
 
-      setEditableRowId(null);
+      const effectiveLogDate = logDateWasModified
+        ? moment(editedRowData.logDate).format('YYYY-MM-DD') + 'T00:00:00.000'
+        : originalRowData.logDate;
+
+      const statusWasModified = editedRowData.status !== originalRowData.status;
+
+      const effectiveStatusDate = statusWasModified
+        ? moment().utc().add(5, 'hours').add(30, 'minutes').format('YYYY-MM-DDTHH:mm:ss.SSS')
+        : originalRowData.statusDate;
+
+      const updatedTaskData = {
+        taskId: editableTaskId,
+        type: editedRowData.taskType === 'Direct' ? 'D' : 'P',
+        projectNumber: editedRowData.project ? editedRowData.project : null,
+        customer: editedRowData.customer,
+        functionArea: editedRowData.function,
+        taskDescription: editedRowData.task,
+        priority: editedRowData.priority,
+        assignedYn: editedRowData.assigned,
+        responsibility: editedRowData.responsibility ? editedRowData.responsibility : null,
+        proposedTarget: editedRowData.dueDate,
+        targetDate: editedRowData.dueDate,
+        status: mapStatusToCode(editedRowData.status),
+        active: editedRowData.active,
+        logDate: effectiveLogDate,
+        statusDate: effectiveStatusDate,
+        remarks: editedRowData.remarks,
+        timeTaken: editedRowData.timeTaken,
+        dateCreated: moment().utc().add(5, 'hours').add(30, 'minutes').format('YYYY-MM-DDTHH:mm:ss.SSS'),
+        createdUser: sessionStorage.getItem('userId'),
+        dateModified: moment().utc().add(5, 'hours').add(30, 'minutes').format('YYYY-MM-DDTHH:mm:ss.SSS'),
+        modifiedUser: sessionStorage.getItem('userId'),
+        dateClosed: moment().utc().add(5, 'hours').add(30, 'minutes').format('YYYY-MM-DDTHH:mm:ss.SSS'),
+        dateRemoved: moment().utc().add(5, 'hours').add(30, 'minutes').format('YYYY-MM-DDTHH:mm:ss.SSS'),
+      }
+
+      try {
+        const response = await fetch('https://task360.osc-fr1.scalingo.io/task-360/api/v1/task', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify([updatedTaskData]),
+        });
+        const data = await response.json();
+        if (data.returnCode === 0) {
+          console.log('Task updated successfully');
+          await fetchTasks();
+        } else {
+          console.error('Task Updation failed', data.returnMsg);
+        }
+      } catch (error) {
+        console.error('Failed to update task:', error);
+      } finally {
+        fetchTasks();
+        setIsLoading(false);
+      }
+
+      setEditableTaskId(null);
       setEditedRowData({});
       setIsCreatingTask(false);
-      setNewTaskIds(prevIds => prevIds.filter(id => id !== editableRowId));
-      scrollToCheckbox();
+      setNewTaskIds(prevIds => prevIds.filter(id => id !== editableTaskId));
       setMode(null);
     } else {
       setTriggerAnimation(!triggerAnimation);
@@ -285,7 +364,7 @@ const AllTasks = () => {
 
     let updatedData = { ...editedRowData, [accessor]: value };
     
-    if (accessor === "taskType" && newTaskIds.includes(editableRowId)) {
+    if (accessor === "taskType" && newTaskIds.includes(editableTaskId)) {
       if (value === "Direct") {
         updatedData = {
           ...updatedData,
@@ -306,8 +385,12 @@ const AllTasks = () => {
       }
     }
 
-    if (accessor === "status" && editedRowData.status !== value) {
-      updatedData.statusDate = moment().format('YYYY-MM-DD')
+    if (accessor === "status") {
+      if (value === originalRowData.status) {
+        updatedData.statusDate = originalRowData.statusDate;
+      } else {
+        updatedData.statusDate = moment().format('YYYY-MM-DD');
+      }
     }
 
     setEditedRowData(updatedData);
@@ -379,41 +462,65 @@ const AllTasks = () => {
     setTaskToDelete(null);
   }
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (taskToDelete && taskToDelete.length > 0) {
-      setTaskList(currentTaskList => currentTaskList.filter(task => !taskToDelete.includes(task.id)));
+      const deleteRequestBody = taskToDelete.map(taskId => ({ taskId }));
+      setIsLoading(true);
+
+      console.log("Delete Request body: ", deleteRequestBody);
+
+      try {
+        const response = await fetch('https://task360.osc-fr1.scalingo.io/task-360/api/v1/task', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(deleteRequestBody),
+        });
+        const data = await response.json();
+        if (data.returnCode === 0) {
+          console.log('Tasks deleted successfully');
+          fetchTasks();
+        } else {
+          console.error('Task deletion failed', data.returnMsg);
+        }
+      } catch (error) {
+        console.error('Failed to delete tasks:', error);
+      } finally {
+        fetchTasks();
+        setIsLoading(false);
+      }
       setShowDeleteModal(false);
       clearSelection();
-      setSelectAllChecked(false);
       setSelectedRowIds({});
-      setEditableRowId(null);
+      setEditableTaskId(null);
       setEditedRowData({});
     }
   };
 
-  const handleSelectRow = (id) => {
+  const handleSelectRow = (taskId) => {
     setSelectedRowIds(prev => ({
       ...prev,
-      [id]: !prev[id]
+      [taskId]: !prev[taskId]
     }));
   };
 
   const triggerDeleteModal = () => {
-    const selectedIds = Object.keys(selectedRowIds).map(id => parseInt(id));
+    const selectedIds = Object.keys(selectedRowIds).filter(id => selectedRowIds[id]);
     setShowDeleteModal(true);
     setTaskToDelete(selectedIds);
   };
 
   const clearSelection = () => {
     setSelectedRowIds({});
-    setEditableRowId(null);
+    setEditableTaskId(null);
     setEditedRowData({});
   };
 
   const handleSelectAllChange = (e) => {
     const checked = e.target.checked;
     if (checked) {
-      const allIds = TaskList.map(task => task.id);
+      const allIds = TaskList.map(task => task.taskId);
       setSelectedRowIds(allIds.reduce((acc, id) => ({ ...acc, [id]: true }), {}));
     } else {
       setSelectedRowIds({});
@@ -454,7 +561,6 @@ const AllTasks = () => {
     }
 
     setValidationErrors(errors);
-    console.log("Validation errors in create mode:", errors);
     return isValid;
   };
 
@@ -501,7 +607,6 @@ const AllTasks = () => {
     }
 
     setValidationErrors(errors);
-    console.log("Validation errors in edit mode:", errors);
     return isValid;
   };
 
@@ -562,7 +667,7 @@ const AllTasks = () => {
     );
   });
 
-  const isCreateOrEditMode = editableRowId !== null || newTaskIds.length > 0;
+  const isCreateOrEditMode = editableTaskId !== null || newTaskIds.length > 0;
 
   const columns = useMemo(
     () => [
@@ -578,8 +683,8 @@ const AllTasks = () => {
         id: 'selection',
         Cell: ({ row }) => (
           <IndeterminateCheckbox
-            checked={selectedRowIds[row.original.id] === true}
-            onChange={() => handleSelectRow(row.original.id)}
+            checked={selectedRowIds[row.original.taskId] === true}
+            onChange={() => handleSelectRow(row.original.taskId)}
             disabled={isCreateOrEditMode}
           />
         ),
@@ -588,8 +693,13 @@ const AllTasks = () => {
         Header: "Task ID",
         accessor: "taskId",
         filterable: false,
-        Cell: (cellProps) => {
-          return <OrdersId {...cellProps} />;
+        Cell: ({ row }) => {
+          const isEditing = row.original.taskId === editableTaskId;
+          if (isEditing && mode === 'create') {
+            return <Input disabled value="" placeholder="Task ID will be assigned after creation" />;
+          } else {
+            return <span>{row.original.taskId}</span>;
+          }
         },
       },
       {
@@ -597,7 +707,7 @@ const AllTasks = () => {
         accessor: "taskType",
         filterable: false,
         Cell: ({ row }) => {
-          const isEditing = row.original.id === editableRowId;
+          const isEditing = row.original.taskId === editableTaskId;
           const cellStyle = getCellStyle(isEditing);
           if(isEditing) {
             return (
@@ -635,7 +745,7 @@ const AllTasks = () => {
         accessor: "project",
         filterable: false,
         Cell: ({ row }) => {
-          const isEditing = row.original.id === editableRowId;
+          const isEditing = row.original.taskId === editableTaskId;
           const cellStyle = getCellStyle(isEditing);
           if(isEditing) {
             return (
@@ -654,9 +764,7 @@ const AllTasks = () => {
                 disabled={editedRowData.taskType !== "Project"}
               >
                 <option value="">Select</option>
-                <option value="Task360">Task360</option>
-                <option value="ITC">ITC</option>
-                <option value="HRMS">HRMS</option>
+                <option value="PROJ1">PROJ1</option>
               </Input>
             );
           }
@@ -668,7 +776,7 @@ const AllTasks = () => {
         accessor: "customer",
         filterable: false,
         Cell: ({ row }) => {
-          const isEditing = row.original.id === editableRowId;
+          const isEditing = row.original.taskId === editableTaskId;
           const cellStyle = getCellStyle(isEditing);
           if(isEditing) {
             return (
@@ -696,7 +804,7 @@ const AllTasks = () => {
         accessor: "function",
         filterable: false,
         Cell: ({ row }) => {
-          const isEditing = row.original.id === editableRowId;
+          const isEditing = row.original.taskId === editableTaskId;
           const cellStyle = getCellStyle(isEditing);
           if(isEditing) {
             return (
@@ -730,7 +838,7 @@ const AllTasks = () => {
         accessor: "task",
         filterable: false,
         Cell: ({ row }) => {
-          const isEditing = row.original.id === editableRowId;
+          const isEditing = row.original.taskId === editableTaskId;
           const { status } = row.original;
           const cellStyle = getCellStyle(isEditing);
           if(isEditing) {
@@ -772,7 +880,7 @@ const AllTasks = () => {
                     </li>
                   )}
                   <li className="list-inline-item">
-                    <Link to="#" className="remove-item-btn" onClick={() => handleDeleteClick(row.original.id)}>
+                    <Link to="#" className="remove-item-btn" onClick={() => handleDeleteClick(row.original.taskId)}>
                       <i className="ri-delete-bin-fill align-bottom me-2 text-muted"></i>
                     </Link>
                   </li>
@@ -787,7 +895,7 @@ const AllTasks = () => {
         accessor: "priority",
         filterable: false,
         Cell: ({ row }) => {
-          const isEditing = row.original.id === editableRowId;
+          const isEditing = row.original.taskId === editableTaskId;
           const cellStyle = getCellStyle(isEditing);
           if(isEditing) {
             return (
@@ -827,7 +935,7 @@ const AllTasks = () => {
         accessor: "assigned",
         filterable: false,
         Cell: ({ row }) => {
-          const isEditing = row.original.id === editableRowId;
+          const isEditing = row.original.taskId === editableTaskId;
           const cellStyle = getCellStyle(isEditing);
           if(isEditing) {
             return (
@@ -865,7 +973,7 @@ const AllTasks = () => {
         accessor: "responsibility",
         filterable: false,
         Cell: ({ row }) => {
-          const isEditing = row.original.id === editableRowId;
+          const isEditing = row.original.taskId === editableTaskId;
           const cellStyle = getCellStyle(isEditing);
           if(isEditing) {
             return (
@@ -885,9 +993,9 @@ const AllTasks = () => {
                 disabled={editedRowData.assigned !== "Yes"}
               >
                 <option value="">Select</option>
-                <option value="Vijayan">Vijayan</option>
-                <option value="Purushoth">Purushoth</option>
-                <option value="Nagappan">Nagappan</option>
+                <option value="nagappan03">nagappan03</option>
+                <option value="nagappan04">nagappan04</option>
+                <option value="nagappan05">nagappan05</option>
               </Input>
             );
           }
@@ -899,14 +1007,14 @@ const AllTasks = () => {
         accessor: "dueDate",
         filterable: false,
         Cell: ({ row }) => {
-          const isEditing = row.original.id === editableRowId;
+          const isEditing = row.original.taskId === editableTaskId;
           const cellStyle = getCellStyle(isEditing);
           if(isEditing) {
             return (
               <div style={cellStyle}>
                 <Flatpickr
                   id='dueDate'
-                  value={new Date(editedRowData.dueDate)}
+                  value={editedRowData.dueDate ? new Date(editedRowData.dueDate) : null}
                   onChange={([date]) => {
                     handleEditChange(moment(date).format('YYYY-MM-DD'), "dueDate");
                   }}
@@ -928,14 +1036,14 @@ const AllTasks = () => {
         accessor: "logDate",
         filterable: false,
         Cell: ({ row }) => {
-          const isEditing = row.original.id === editableRowId;
+          const isEditing = row.original.taskId === editableTaskId;
           const cellStyle = getCellStyle(isEditing);
           if(isEditing) {
             return (
               <div style={cellStyle}>
                 <Flatpickr
                   id='logDate'
-                  value={new Date(editedRowData.logDate)}
+                  value={editedRowData.logDate ? new Date(editedRowData.logDate) : null}
                   onChange={([date]) => {
                     handleEditChange(moment(date).format('YYYY-MM-DD'), "logDate");
                   }}
@@ -957,7 +1065,7 @@ const AllTasks = () => {
         accessor: "status",
         filterable: false,
         Cell: ({ row }) => {
-          const isEditing = row.original.id === editableRowId;
+          const isEditing = row.original.taskId === editableTaskId;
           const cellStyle = getCellStyle(isEditing);
           if(isEditing) {
             return (
@@ -969,7 +1077,7 @@ const AllTasks = () => {
                   handleEditChange(e.target.value, "status")
                 }
                 style={cellStyle}
-                disabled={(editedRowData.taskType === "Direct" || editedRowData.taskType === "Project") && newTaskIds.includes(editableRowId)}
+                disabled={(editedRowData.taskType === "Direct" || editedRowData.taskType === "Project") && newTaskIds.includes(editableTaskId)}
               >
                 <option value="New">New</option>
                 <option value="Accepted">Accepted</option>
@@ -1020,14 +1128,14 @@ const AllTasks = () => {
         accessor: "statusDate",
         filterable: false,
         Cell: ({ row }) => {
-          const isEditing = row.original.id === editableRowId;
+          const isEditing = row.original.taskId === editableTaskId;
           const cellStyle = getCellStyle(isEditing);
           if(isEditing) {
             return (
               <div style={cellStyle}>
                 <Flatpickr
                   id='statusDate'
-                  value={new Date(editedRowData.statusDate)}
+                  value={editedRowData.statusDate ? new Date(editedRowData.statusDate) : null}
                   onChange={([date]) => {
                     handleEditChange(moment(date).format('YYYY-MM-DD'), "statusDate");
                   }}
@@ -1048,7 +1156,7 @@ const AllTasks = () => {
         Header: "Remarks",
         accessor: "remarks",
         Cell: ({ row }) => {
-          const isEditing = row.original.id === editableRowId;
+          const isEditing = row.original.taskId === editableTaskId;
           const cellStyle = getCellStyle(isEditing);
           if(isEditing) {
             return (
@@ -1075,7 +1183,7 @@ const AllTasks = () => {
         accessor: "timeTaken",
         filterable: false,
         Cell: ({ row }) => {
-          const isEditing = row.original.id === editableRowId;
+          const isEditing = row.original.taskId === editableTaskId;
           const cellStyle = getCellStyle(isEditing);
           if(isEditing) {
             return (
@@ -1103,7 +1211,7 @@ const AllTasks = () => {
         accessor: "active",
         filterable: false,
         Cell: ({ row }) => {
-          const isEditing = row.original.id === editableRowId;
+          const isEditing = row.original.taskId === editableTaskId;
           const cellStyle = getCellStyle(isEditing);
           if(isEditing) {
             return (
@@ -1115,7 +1223,7 @@ const AllTasks = () => {
                   handleEditChange(e.target.value, "active")
                 }
                 style={cellStyle}
-                disabled={(editedRowData.taskType === "Direct" || editedRowData.taskType === "Project") && newTaskIds.includes(editableRowId)}
+                disabled={(editedRowData.taskType === "Direct" || editedRowData.taskType === "Project") && newTaskIds.includes(editableTaskId)}
               >
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
@@ -1133,7 +1241,7 @@ const AllTasks = () => {
         },
       },
     ],
-    [editableRowId, editedRowData, handleEditChange, updateMyData]
+    [editableTaskId, editedRowData, handleEditChange, updateMyData]
   );
 
   return (
@@ -1156,18 +1264,18 @@ const AllTasks = () => {
                       </>
                     ) : (
                       <>
-                        {!isCreatingTask && !editableRowId && (
+                        {!isCreatingTask && !editableTaskId && (
                           <button className="btn btn-danger add-btn me-1" onClick={() => {}}><i className="ri-add-line align-bottom me-1"></i> Import</button>
                         )}
-                        {TaskList.length > 0 && !isCreatingTask && !editableRowId && (
+                        {TaskList.length > 0 && !isCreatingTask && !editableTaskId && (
                           <button className="btn btn-danger add-btn me-1" onClick={() => {}}><i className="ri-add-line align-bottom me-1"></i> Export</button>
                         )}
-                        {!isCreatingTask && !editableRowId && TaskList.length > 0 && (
+                        {!isCreatingTask && !editableTaskId && TaskList.length > 0 && (
                           <button className="btn btn-danger add-btn me-1" onClick={handleCreateTask}><i className="ri-add-line align-bottom me-1"></i> Create Task</button>
                         )}
                       </>
                     )}
-                    {(isCreatingTask || editableRowId) && (
+                    {(isCreatingTask || editableTaskId) && (
                       <>
                         <Button color='secondary' onClick={handleCancelClick}>Cancel</Button>
                         {
