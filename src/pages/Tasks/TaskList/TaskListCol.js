@@ -5,7 +5,7 @@ import moment from "moment";
 const handleValidDate = (dateStr) => {
   const date = moment(dateStr, ['YYYY-MM-DD', 'DD MMM, YYYY']);
   if (!date.isValid()) {
-    return 'Invalid date';
+    return '';
   }
   return date.format("DD MMM YYYY");
 };

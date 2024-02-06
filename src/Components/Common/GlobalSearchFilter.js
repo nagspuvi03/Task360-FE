@@ -441,11 +441,22 @@ const TaskListGlobalFilter = () => {
                 <div className="input-light">
                     <select className="form-control" data-choices data-choices-search-false name="status" id="idStatus">
                         <option value="">Status</option>
-                        <option defaultValue="all"  >All</option>
                         <option value="New">New</option>
+                        <option value="Accepted">Accepted</option>
                         <option value="Pending">Pending</option>
-                        <option value="Inprogress">Inprogress</option>
                         <option value="Completed">Completed</option>
+                        <option value="Closed">Closed</option>
+                        <option value="NotCompleted">Not Completed</option>
+                        <option value="Removed">Removed</option>
+                    </select>
+                </div>
+            </div>
+
+            <div className="col-sm-2">
+                <div className="input-light">
+                    <select className="form-control" data-choices data-choices-search-false name="projects" id="idProjects">
+                        <option value="">Projects</option>
+                        <option value="PROJ1">PROJ1</option>
                     </select>
                 </div>
             </div>
@@ -454,16 +465,27 @@ const TaskListGlobalFilter = () => {
                 <div className="input-light">
                     <select className="form-control" data-choices data-choices-search-false name="customers" id="idCustomers">
                         <option value="">Customers</option>
-                        <option value="Nagappan">Nagappan</option>
-                        <option value="Vijayan">Vijayan</option>
-                        <option value="Purushoth">Purushoth</option>
+                        <option value="Akranta">Akranta</option>
+                        <option value="Vamtech">Vamtech</option>
+                        <option value="Zoho">Zoho</option>
+                    </select>
+                </div>
+            </div>
+
+            <div className="col-sm-2">
+                <div className="input-light">
+                    <select className="form-control" data-choices data-choices-search-false name="responsibility" id="idResponsibility">
+                        <option value="">Responsibility</option>
+                        <option value="nagappan03">nagappan03</option>
+                        <option value="nagappan04">nagappan04</option>
+                        <option value="nagappan05">nagappan05</option>
                     </select>
                 </div>
             </div>
 
             <div className="col-sm-auto">
                 <button type="button" className="btn btn-primary w-100"> <i className="ri-equalizer-fill me-1 align-bottom"></i>
-                    Filter
+                    Apply Filter(s)
                 </button>
             </div>
         </React.Fragment>
