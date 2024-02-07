@@ -45,7 +45,7 @@ import {
   widgetsTasks,
   otherWidgets2
 } from "./widgets";
-import { taskWidgets, allTask, kanbanBoardData } from "./taskList";
+import { taskWidgets } from "./taskList";
 import { invoiceWidgets, invoiceTable } from "./invoiceList";
 import {
   projectList,
@@ -126,8 +126,6 @@ export {
   widgetsPortfolio,
   widgetsTasks,
   taskWidgets,
-  allTask,
-  kanbanBoardData,
   invoiceWidgets,
   invoiceTable,
   projectList,

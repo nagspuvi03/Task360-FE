@@ -4,9 +4,11 @@ import DeleteModal from "../../../Components/Common/DeleteModal";
 import Loader from "../../../Components/Common/Loader";
 import Flatpickr from "react-flatpickr";
 import { Col, Input, Button } from 'reactstrap';
-import { handleValidDate} from "./TaskListCol";
+import { handleValidDate } from "./TaskListCol";
 import { Link } from 'react-router-dom';
 import moment from 'moment';
+import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer, toast } from 'react-toastify';
 
 const AllTasks = () => {
   const [TaskList, setTaskList] = useState([]);
@@ -15,19 +17,47 @@ const AllTasks = () => {
   const [editedRowData, setEditedRowData] = useState({});
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState(null);
-  const [lastId, setLastId] = useState(0);
   const [newTaskIds, setNewTaskIds] = useState([]);
   const [selectedRowIds, setSelectedRowIds] = useState({});
   const [isCreatingTask, setIsCreatingTask] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
   const [triggerAnimation, setTriggerAnimation] = useState(false);
   const [mode, setMode] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   const [numberOfElements, setNumberOfElements] = useState(0);
+  const [users, setUsers] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedProject, setSelectedProject] = useState("");
+  const [selectedCustomerId, setSelectedCustomerId] = useState(null);
+
+  useEffect(() => {
+    const fetchDropdownData = async () => {
+      try {
+        const usersResponse = await fetch('https://task360.osc-fr1.scalingo.io/task-360/api/v1/auth/users');
+        const projectsResponse = await fetch('https://task360.osc-fr1.scalingo.io/task-360/api/v1/project');
+        const customersResponse = await fetch('https://task360.osc-fr1.scalingo.io/task-360/api/v1/customer');
+        
+        const usersData = await usersResponse.json();
+        const projectsData = await projectsResponse.json();
+        const customersData = await customersResponse.json();
+
+        setUsers(usersData);
+        setProjects(projectsData);
+        setCustomers(customersData);
+      } catch (error) {
+        console.error("Error fetching dropdown data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDropdownData();
+  }, []);
 
   const mapStatus = (status) => {
     const statusMap = {
@@ -43,7 +73,7 @@ const AllTasks = () => {
   };
 
   const fetchTasks = async () => {
-    setIsLoading(true);
+    setLoading(true);
     try {
       const response = await fetch(`https://task360.osc-fr1.scalingo.io/task-360/api/v1/task/getTasks?page=${currentPage}&pageSize=${pageSize}`, {
         method: 'POST',
@@ -51,12 +81,12 @@ const AllTasks = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          project: "",
-          customer: "",
-          fromDate: "",
-          toDate: "",
-          status: "",
-          responsibility: "",
+          project: null,
+          customer: null,
+          fromDate: null,
+          toDate: null,
+          status: null,
+          responsibility: null,
         }),
       });
       if (response.ok) {
@@ -77,11 +107,17 @@ const AllTasks = () => {
         setTaskList(mappedTasks);
       } else {
         console.error('Failed to fetch tasks: ', response.statusText);
+        toast.error('Failed to fetch tasks', {
+          style: { backgroundColor: '#FF4040', color: 'white' },
+        });
       }
     } catch (error) {
       console.error('Failed to fetch tasks:', error);
+      toast.error('Failed to fetch tasks', {
+        style: { backgroundColor: '#FF4040', color: 'white' },
+      });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
@@ -211,7 +247,7 @@ const AllTasks = () => {
 
   const handleApplyClick = async () => {
     if (validateFields()) {
-      setIsLoading(true);
+      setLoading(true);
 
       const effectiveLogDate = editedRowData.logDate
         ? moment(editedRowData.logDate).format('YYYY-MM-DD') + 'T00:00:00.000'
@@ -254,14 +290,23 @@ const AllTasks = () => {
         if (data.returnCode === 0) {
           console.log('Task created successfully');
           await fetchTasks();
+          toast.success('Task created successfully', {
+            style: { backgroundColor: '#4BB543', color: 'white' },
+          });
         } else {
           console.error('Task Creation failed', data.returnMsg);
+          toast.error('Task creation failed', {
+            style: { backgroundColor: '#FF4040', color: 'white' },
+          });
         }
       } catch (error) {
         console.error('Failed to create task:', error);
+        toast.error('Task creation failed', {
+          style: { backgroundColor: '#FF4040', color: 'white' },
+        });
       } finally {
         fetchTasks();
-        setIsLoading(false);
+        setLoading(false);
       }
 
       setValidationErrors({});
@@ -281,7 +326,7 @@ const AllTasks = () => {
 
   const handleUpdateClick = async () => {
     if (validateEditFields()) {
-      setIsLoading(true);
+      setLoading(true);
       setValidationErrors({});
       setTriggerAnimation(false);
 
@@ -335,14 +380,23 @@ const AllTasks = () => {
         if (data.returnCode === 0) {
           console.log('Task updated successfully');
           await fetchTasks();
+          toast.success('Task updated successfully', {
+            style: { backgroundColor: '#4BB543', color: 'white' },
+          });
         } else {
           console.error('Task Updation failed', data.returnMsg);
+          toast.error('Task updation failed', {
+            style: { backgroundColor: '#FF4040', color: 'white' },
+          });
         }
       } catch (error) {
         console.error('Failed to update task:', error);
+        toast.error('Task updation failed', {
+          style: { backgroundColor: '#FF4040', color: 'white' },
+        });
       } finally {
         fetchTasks();
-        setIsLoading(false);
+        setLoading(false);
       }
 
       setEditableTaskId(null);
@@ -427,6 +481,7 @@ const AllTasks = () => {
       if (value === "Direct") {
         updatedData = { ...updatedData, project: "" };
         setEditedRowData(updatedData);
+        setSelectedCustomerId("");
         setValidationErrors(prevErrors => {
           const newErrors = { ...prevErrors };
           delete newErrors.project;
@@ -439,6 +494,8 @@ const AllTasks = () => {
         delete newErrors[accessor];
         return newErrors;
       });
+    } else if(accessor === "customer") {
+      setSelectedCustomerId(value);
     }
 
     if (value === "" || (accessor === "project" && updatedData.taskType === "Project" && value === "")) {
@@ -449,6 +506,19 @@ const AllTasks = () => {
         delete newErrors[accessor];
         return newErrors;
       });
+    }
+  };
+
+  const handleProjectChange = async (projectNumber) => {
+    setSelectedProject(projectNumber);
+    const projectUrl = `https://task360.osc-fr1.scalingo.io/task-360/api/v1/project/${projectNumber}`;
+    try {
+      const response = await fetch(projectUrl);
+      const data = await response.json();
+      const projectId = data[0]?.customerId;
+      setSelectedCustomerId(projectId);
+    } catch (error) {
+      console.error("Error fetching project details:", error);
     }
   };
 
@@ -465,12 +535,12 @@ const AllTasks = () => {
   const handleConfirmDelete = async () => {
     if (taskToDelete && taskToDelete.length > 0) {
       const deleteRequestBody = taskToDelete.map(taskId => ({ taskId }));
-      setIsLoading(true);
+      setLoading(true);
 
       console.log("Delete Request body: ", deleteRequestBody);
 
       try {
-        const response = await fetch('https://task360.osc-fr1.scalingo.io/task-360/api/v1/task', {
+        const response = await fetch('https://task360.osc-fr1.scalingo.io/task-360/api/v1/tak', {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
@@ -480,15 +550,24 @@ const AllTasks = () => {
         const data = await response.json();
         if (data.returnCode === 0) {
           console.log('Tasks deleted successfully');
-          fetchTasks();
+          await fetchTasks();
+          toast.success('Task deleted successfully', {
+            style: { backgroundColor: '#4BB543', color: 'white' },
+          });
         } else {
           console.error('Task deletion failed', data.returnMsg);
+          toast.error('Task deletion failed', {
+            style: { backgroundColor: '#FF4040', color: 'white' },
+          });
         }
       } catch (error) {
         console.error('Failed to delete tasks:', error);
+        toast.error('Task deletion failed', {
+          style: { backgroundColor: '#FF4040', color: 'white' },
+        });
       } finally {
         fetchTasks();
-        setIsLoading(false);
+        setLoading(false);
       }
       setShowDeleteModal(false);
       clearSelection();
@@ -753,9 +832,10 @@ const AllTasks = () => {
                 id='project'
                 type='select'
                 value={editedRowData.project ?? ""}
-                onChange={(e) => 
+                onChange={(e) => {
+                  handleProjectChange(e.target.value);
                   handleEditChange(e.target.value, "project")
-                }
+                }}
                 style={{
                   ...cellStyle,
                   ...(validationErrors.project && errorStyle),
@@ -764,7 +844,9 @@ const AllTasks = () => {
                 disabled={editedRowData.taskType !== "Project"}
               >
                 <option value="">Select</option>
-                <option value="PROJ1">PROJ1</option>
+                {projects.map((project) => (
+                  <option key={project.projectNumber} value={project.projectNumber}>{project.projectName}</option>
+                ))}
               </Input>
             );
           }
@@ -783,16 +865,17 @@ const AllTasks = () => {
               <Input
                 id='customer'
                 type='select'
-                value={editedRowData.customer ?? ""}
+                value={selectedCustomerId ?? ""}
                 onChange={(e) => 
                   handleEditChange(e.target.value, "customer")
                 }
+                disabled={editedRowData.taskType === "Project" && !!editedRowData.project}
                 style={cellStyle}
               >
                 <option value="">Select</option>
-                <option value="Akranta">Akranta</option>
-                <option value="Vamtech">Vamtech</option>
-                <option value="Zoho">Zoho</option>
+                {customers.map((customer) => (
+                  <option key={customer.customerId} value={customer.customerId}>{customer.customerName}</option>
+                ))}
               </Input>
             );
           }
@@ -993,9 +1076,9 @@ const AllTasks = () => {
                 disabled={editedRowData.assigned !== "Yes"}
               >
                 <option value="">Select</option>
-                <option value="nagappan03">nagappan03</option>
-                <option value="nagappan04">nagappan04</option>
-                <option value="nagappan05">nagappan05</option>
+                {users.map((user) => (
+                  <option key={user.userId} value={user.userId}>{user.userName}</option>
+                ))}
               </Input>
             );
           }
@@ -1249,6 +1332,7 @@ const AllTasks = () => {
       <style>
         {errorAnimation}
       </style>
+      <ToastContainer position="bottom-right" autoClose={3000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme='dark' />
       <div className="row">
         <Col lg={12}>
           <div className="card" id="tasksList">
@@ -1294,7 +1378,7 @@ const AllTasks = () => {
                 </div>
               </div>
             </div>
-            {!isLoading ? (
+            {!loading ? (
               TaskList.length > 0 ? (
                 <div className="card-body pt-0">
                   <TableContainer
