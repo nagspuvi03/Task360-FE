@@ -452,7 +452,7 @@ const TaskListGlobalFilter = () => {
                 </div>
             </div>
 
-            <div className="col-sm-2">
+            <div className="col-sm-auto">
                 <div className="input-light">
                     <select className="form-control" data-choices data-choices-search-false name="projects" id="idProjects">
                         <option value="">Projects</option>
@@ -461,7 +461,7 @@ const TaskListGlobalFilter = () => {
                 </div>
             </div>
 
-            <div className="col-sm-2">
+            <div className="col-sm-auto">
                 <div className="input-light">
                     <select className="form-control" data-choices data-choices-search-false name="customers" id="idCustomers">
                         <option value="">Customers</option>
@@ -472,13 +472,22 @@ const TaskListGlobalFilter = () => {
                 </div>
             </div>
 
-            <div className="col-sm-2">
+            <div className="col-sm-auto">
                 <div className="input-light">
                     <select className="form-control" data-choices data-choices-search-false name="responsibility" id="idResponsibility">
                         <option value="">Responsibility</option>
                         <option value="nagappan03">nagappan03</option>
                         <option value="nagappan04">nagappan04</option>
                         <option value="nagappan05">nagappan05</option>
+                    </select>
+                </div>
+            </div>
+
+            <div className="col-sm-auto">
+                <div className="input-light">
+                    <select className="form-control" data-choices data-choices-search-false name="active" id="idActive">
+                        <option value="">Active</option>
+                        <option value="Inactive">Inactive</option>
                     </select>
                 </div>
             </div>
