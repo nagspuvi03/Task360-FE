@@ -168,9 +168,36 @@ const AllTasks = () => {
     return <Input value={value || ''} onChange={onChange} onBlur={onBlur} />;
   };
 
+  const getDefaultDueDate = (taskType) => {
+    const today = moment().startOf('day');
+    let maxDateForDirect = moment().add(50, 'days').endOf('day');
+    let projectEndDate = moment('2024-02-29').endOf('day');
+
+    let defaultDate, maxDate;
+
+    if (taskType === "Project") {
+        defaultDate = moment.min(today.clone().add(3, 'days'), projectEndDate);
+        maxDate = projectEndDate;
+    } else {
+        defaultDate = today.clone().add(3, 'days');
+        maxDate = maxDateForDirect;
+    }
+
+    if (defaultDate.isAfter(maxDate)) {
+        defaultDate = maxDate.clone();
+    }
+
+    return {
+        defaultDate: defaultDate.toDate(),
+        minDate: today.toDate(),
+        maxDate: maxDate.toDate(),
+    };
+  };
+
   const handleCreateTask = () => {
     setIsCreatingTask(true);
     const newTaskId = `new_${Date.now()}`;
+    const { defaultDate } = getDefaultDueDate("Direct");
 
     const newTask = {
       id: newTaskId,
@@ -183,8 +210,8 @@ const AllTasks = () => {
       priority: "A",
       assigned: "No",
       responsibility: "",
-      dueDate: "",
-      logDate: "",
+      dueDate: defaultDate,
+      logDate: moment().format('YYYY-MM-DD'),
       status: "New",
       statusDate: moment().format('YYYY-MM-DD'),
       remarks: "",
@@ -253,6 +280,8 @@ const AllTasks = () => {
         ? moment(editedRowData.logDate).format('YYYY-MM-DD') + 'T00:00:00.000'
         : "";
 
+      const formattedDueDate = moment(editedRowData.dueDate).format('YYYY-MM-DD');
+
       const taskData = {
           type: editedRowData.taskType === 'Direct' ? 'D' : 'P',
           projectNumber: editedRowData.project ? editedRowData.project : null,
@@ -262,8 +291,8 @@ const AllTasks = () => {
           priority: editedRowData.priority,
           assignedYn: editedRowData.assigned,
           responsibility: editedRowData.responsibility ? editedRowData.responsibility : null,
-          proposedTarget: editedRowData.dueDate,
-          targetDate: editedRowData.dueDate,
+          proposedTarget: formattedDueDate,
+          targetDate: formattedDueDate,
           status: mapStatusToCode(editedRowData.status),
           active: editedRowData.active,
           logDate: effectiveLogDate,
@@ -277,7 +306,7 @@ const AllTasks = () => {
           dateClosed: moment().utc().add(5, 'hours').add(30, 'minutes').format('YYYY-MM-DDTHH:mm:ss.SSS'),
           dateRemoved: moment().utc().add(5, 'hours').add(30, 'minutes').format('YYYY-MM-DDTHH:mm:ss.SSS'),
       };
-
+      console.log(taskData);
       try {
         const response = await fetch('https://task360.osc-fr1.scalingo.io/task-360/api/v1/task', {
           method: 'POST',
@@ -418,24 +447,26 @@ const AllTasks = () => {
 
     let updatedData = { ...editedRowData, [accessor]: value };
     
-    if (accessor === "taskType" && newTaskIds.includes(editableTaskId)) {
+    if (accessor === "taskType") {
+      const { defaultDate } = getDefaultDueDate(value);
+      
+      updatedData = {
+        ...updatedData,
+        dueDate: moment(defaultDate).format('YYYY-MM-DD'),
+        taskType: value,
+      };
+
       if (value === "Direct") {
-        updatedData = {
-          ...updatedData,
-          project: "",
-          responsibility: "",
-          status: "New",
-          statusDate: moment().format('YYYY-MM-DD'),
-          active: "Active",
-        };
+        updatedData.project = "";
+        updatedData.responsibility = "";
+        updatedData.status = "New";
+        updatedData.statusDate = moment().format('YYYY-MM-DD');
+        updatedData.active = "Active";
       } else if (value === "Project") {
-          updatedData = {
-            ...updatedData,
-            responsibility: "",
-            status: "New",
-            statusDate: moment().format('YYYY-MM-DD'),
-            active: "Active",
-          };
+        updatedData.responsibility = "";
+        updatedData.status = "New";
+        updatedData.statusDate = moment().format('YYYY-MM-DD');
+        updatedData.active = "Active";
       }
     }
 
@@ -537,10 +568,8 @@ const AllTasks = () => {
       const deleteRequestBody = taskToDelete.map(taskId => ({ taskId }));
       setLoading(true);
 
-      console.log("Delete Request body: ", deleteRequestBody);
-
       try {
-        const response = await fetch('https://task360.osc-fr1.scalingo.io/task-360/api/v1/tak', {
+        const response = await fetch('https://task360.osc-fr1.scalingo.io/task-360/api/v1/task', {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
@@ -636,6 +665,10 @@ const AllTasks = () => {
     }
     if (editedRowData.assigned === 'Yes' && !editedRowData.responsibility) {
       errors.responsibility = true;
+      isValid = false;
+    }
+    if (!editedRowData.dueDate) {
+      errors.dueDate = true;
       isValid = false;
     }
 
@@ -748,8 +781,8 @@ const AllTasks = () => {
 
   const isCreateOrEditMode = editableTaskId !== null || newTaskIds.length > 0;
 
-  const columns = useMemo(
-    () => [
+  const columns = useMemo(() => {
+    let baseColumns = [
       {
         Header: () => (
           <IndeterminateCheckbox
@@ -767,19 +800,6 @@ const AllTasks = () => {
             disabled={isCreateOrEditMode}
           />
         ),
-      },
-      {
-        Header: "Task ID",
-        accessor: "taskId",
-        filterable: false,
-        Cell: ({ row }) => {
-          const isEditing = row.original.taskId === editableTaskId;
-          if (isEditing && mode === 'create') {
-            return <Input disabled value="" placeholder="Task ID will be assigned after creation" />;
-          } else {
-            return <span>{row.original.taskId}</span>;
-          }
-        },
       },
       {
         Header: "Task Type",
@@ -962,11 +982,13 @@ const AllTasks = () => {
                       </Link>
                     </li>
                   )}
-                  <li className="list-inline-item">
-                    <Link to="#" className="remove-item-btn" onClick={() => handleDeleteClick(row.original.taskId)}>
-                      <i className="ri-delete-bin-fill align-bottom me-2 text-muted"></i>
-                    </Link>
-                  </li>
+                  {sessionStorage.getItem('userRole') !== 'PM' && (
+                    <li className="list-inline-item">
+                      <Link to="#" className="remove-item-btn" onClick={() => handleDeleteClick(row.original.taskId)}>
+                        <i className="ri-delete-bin-fill align-bottom me-2 text-muted"></i>
+                      </Link>
+                    </li>
+                  )}
                 </ul>
               </div>
             </div>
@@ -1092,9 +1114,14 @@ const AllTasks = () => {
         Cell: ({ row }) => {
           const isEditing = row.original.taskId === editableTaskId;
           const cellStyle = getCellStyle(isEditing);
+          const { minDate, maxDate } = getDefaultDueDate(editedRowData.taskType || "Direct");
           if(isEditing) {
             return (
-              <div style={cellStyle}>
+              <div style={{
+                  ...cellStyle,
+                  ...(validationErrors.dueDate && errorStyle),
+                  animation: validationErrors.dueDate ? 'shake 0.5s' : 'none'
+                }}>
                 <Flatpickr
                   id='dueDate'
                   value={editedRowData.dueDate ? new Date(editedRowData.dueDate) : null}
@@ -1105,7 +1132,8 @@ const AllTasks = () => {
                     altInput: true,
                     altFormat: "F j, Y",
                     dateFormat: "Y-m-d",
-                    minDate: "today"
+                    minDate: minDate,
+                    maxDate: maxDate
                   }}
                 />
               </div>
@@ -1135,6 +1163,7 @@ const AllTasks = () => {
                     altFormat: "F j, Y",
                     dateFormat: "Y-m-d",
                     minDate: new Date().fp_incr(-3),
+                    maxDate: new Date()
                   }}
                 />
               </div>
@@ -1289,7 +1318,10 @@ const AllTasks = () => {
           return <span>{row.original.timeTaken}</span>
         },
       },
-      {
+    ];
+
+    if (!isCreatingTask) {
+      baseColumns.push({
         Header: "Active",
         accessor: "active",
         filterable: false,
@@ -1306,7 +1338,7 @@ const AllTasks = () => {
                   handleEditChange(e.target.value, "active")
                 }
                 style={cellStyle}
-                disabled={(editedRowData.taskType === "Direct" || editedRowData.taskType === "Project") && newTaskIds.includes(editableTaskId)}
+                disabled
               >
                 <option value="Active">Active</option>
                 <option value="Inactive">Inactive</option>
@@ -1321,11 +1353,11 @@ const AllTasks = () => {
               {row.original.active}
             </span>
           );
-        },
-      },
-    ],
-    [editableTaskId, editedRowData, handleEditChange, updateMyData]
-  );
+        }
+      });
+    }
+    return baseColumns;
+  }, [editableTaskId, editedRowData, handleEditChange, updateMyData, isCreatingTask]);
 
   return (
     <React.Fragment>
