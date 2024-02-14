@@ -8,10 +8,11 @@ import {
   useFilters
 } from "react-table";
 import { Table, Row, Col, Button, CardBody } from "reactstrap";
-import { TaskListGlobalFilter } from "../../Components/Common/GlobalSearchFilter";
+import TaskListGlobalFilter from "../../Components/Common/GlobalSearchFilter";
 
 function GlobalFilter({
-  isTaskListFilter
+  isTaskListFilter,
+  onFilterChange
 }) {
   return (
     <React.Fragment>
@@ -19,7 +20,7 @@ function GlobalFilter({
         <form>
           <Row>
             {isTaskListFilter && (
-              <TaskListGlobalFilter />
+              <TaskListGlobalFilter onFilterChange={onFilterChange} />
             )}
           </Row>
         </form>
@@ -35,6 +36,7 @@ const TableContainer = ({
   totalPages,
   currentPage,
   onPageChange,
+  onFilterChange,
   customPageSize,
   totalElements,
   numberOfElements,
@@ -87,6 +89,10 @@ const TableContainer = ({
     setPageSize(Number(event.target.value));
   };
 
+  const maxPageButtons = 10;
+  const startingPageNumber = Math.max(currentPage - maxPageButtons / 2, 0);
+  const endingPageNumber = Math.min(startingPageNumber + maxPageButtons, totalPages);
+
   return (
     <Fragment>
       <Row className="mb-3">
@@ -109,6 +115,7 @@ const TableContainer = ({
           <GlobalFilter
             setGlobalFilter={setGlobalFilter}
             isTaskListFilter={isTaskListFilter}
+            onFilterChange={onFilterChange}
           />
         )}
       </Row>
@@ -154,15 +161,15 @@ const TableContainer = ({
         <div className="col-sm-auto">
           <ul className="pagination pagination-separated pagination-md justify-content-center justify-content-sm-start mb-0">
             <li className={currentPage === 0 ? "page-item disabled" : "page-item"}>
-              <Button className="page-link" onClick={() => onPageChange(currentPage - 1)}>Previous</Button>
+              <Button className="page-link" onClick={() => onPageChange(Math.max(currentPage - 1, 0))}>Previous</Button>
             </li>
-            {Array.from({ length: totalPages }, (_, i) => (
-              <li key={i} className={currentPage === i ? "page-item active" : "page-item"}>
-                <Button className="page-link" onClick={() => onPageChange(i)}>{i + 1}</Button>
+            {Array.from({ length: endingPageNumber - startingPageNumber }, (_, i) => (
+              <li key={i} className={currentPage === i + startingPageNumber ? "page-item active" : "page-item"}>
+                <Button className="page-link" onClick={() => onPageChange(i + startingPageNumber)}>{i + 1 + startingPageNumber}</Button>
               </li>
             ))}
             <li className={currentPage === totalPages - 1 ? "page-item disabled" : "page-item"}>
-              <Button className="page-link" onClick={() => onPageChange(currentPage + 1)}>Next</Button>
+              <Button className="page-link" onClick={() => onPageChange(Math.min(currentPage + 1, totalPages - 1))}>Next</Button>
             </li>
           </ul>
         </div>
