@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card, CardBody, CardHeader, Container, Form, Row, Col, Label } from 'reactstrap';
 import BreadCrumb from '../../../Components/Common/BreadCrumb';
-import { ColorPicker } from "@vtaits/react-color-picker";
+import ColorPicker from "@vtaits/react-color-picker";
 import { SketchPicker } from "react-color";
 
 //Import Flatepicker

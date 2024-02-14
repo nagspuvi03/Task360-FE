@@ -9,6 +9,7 @@ import { Link } from 'react-router-dom';
 import moment from 'moment';
 import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer, toast } from 'react-toastify';
+import TableSkeletonLoader from '../../../Components/Common/TableSkeletonLoader';
 
 const AllTasks = () => {
   const [TaskList, setTaskList] = useState([]);
@@ -24,7 +25,7 @@ const AllTasks = () => {
   const [triggerAnimation, setTriggerAnimation] = useState(false);
   const [mode, setMode] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(50);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   const [numberOfElements, setNumberOfElements] = useState(0);
@@ -34,6 +35,17 @@ const AllTasks = () => {
   const [loading, setLoading] = useState(true);
   const [selectedProject, setSelectedProject] = useState("");
   const [selectedCustomerId, setSelectedCustomerId] = useState(null);
+  const [plannedFinishDate, setPlannedFinishDate] = useState(null);
+  const [isFiltered, setIsFiltered] = useState(false);
+  const [filters, setFilters] = useState({
+    project: null,
+    customer: null,
+    fromDate: null,
+    toDate: null,
+    status: null,
+    responsibility: null,
+    activeFlag: null
+  });
 
   useEffect(() => {
     const fetchDropdownData = async () => {
@@ -50,7 +62,9 @@ const AllTasks = () => {
         setProjects(projectsData);
         setCustomers(customersData);
       } catch (error) {
-        console.error("Error fetching dropdown data:", error);
+        toast.error('Error fetching dropdown data. Please try again later', {
+          style: { backgroundColor: '#FF4040', color: 'white' },
+        });
       } finally {
         setLoading(false);
       }
@@ -72,6 +86,34 @@ const AllTasks = () => {
     return statusMap[status] || status;
   };
 
+  const mapActive = (active) => {
+    const activeMap = {
+      'A': 'Active',
+      'I': 'Inactive',
+    };
+    return activeMap[active] || active;
+  };
+
+  const onFilterChange = (newFilters) => {
+    setFilters(prevFilters => ({
+      ...prevFilters,
+      ...newFilters
+    }));
+  };
+
+  const handleResetFilters = () => {
+    setIsFiltered(false);
+    setFilters({
+      project: null,
+      customer: null,
+      fromDate: null,
+      toDate: null,
+      status: null,
+      responsibility: null,
+      activeFlag: null
+    })
+  };
+
   const fetchTasks = async () => {
     setLoading(true);
     try {
@@ -81,23 +123,28 @@ const AllTasks = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          project: null,
-          customer: null,
-          fromDate: null,
-          toDate: null,
-          status: null,
-          responsibility: null,
+          project: filters.project,
+          customer: filters.customer,
+          fromDate: filters.fromDate,
+          toDate: filters.toDate,
+          status: filters.status,
+          responsibility: filters.responsibility,
+          activeFlag: filters.active
         }),
       });
       if (response.ok) {
+        const filterFlag = response.headers.get('Filter-Flag');
+        console.log(filterFlag);
+        setIsFiltered(filterFlag === 'Y');
         const data = await response.json();
         setTotalPages(data.totalPages);
         setTotalElements(data.totalElements);
         setNumberOfElements(data.numberOfElements);
         const mappedTasks = data.content.map(task => ({
           ...task,
-          taskType: task.type === 'D' ? 'Direct' : 'Project',
+          taskType: task.type ? (task.type === 'D' ? 'Direct' : 'Project') : null,
           status: mapStatus(task.status),
+          active: mapActive(task.active),
           project: task.projectNumber,
           function: task.functionArea,
           task: task.taskDescription,
@@ -106,13 +153,11 @@ const AllTasks = () => {
         }));
         setTaskList(mappedTasks);
       } else {
-        console.error('Failed to fetch tasks: ', response.statusText);
         toast.error('Failed to fetch tasks', {
           style: { backgroundColor: '#FF4040', color: 'white' },
         });
       }
     } catch (error) {
-      console.error('Failed to fetch tasks:', error);
       toast.error('Failed to fetch tasks', {
         style: { backgroundColor: '#FF4040', color: 'white' },
       });
@@ -123,7 +168,7 @@ const AllTasks = () => {
 
   useEffect(() => {
     fetchTasks();
-  }, [currentPage, pageSize]); 
+  }, [currentPage, pageSize, filters, isFiltered]);
 
   const onPageChange = (newPage) => {
     setCurrentPage(newPage);
@@ -153,7 +198,6 @@ const AllTasks = () => {
 
     const onChange = e => {
       setValue(e.target.value);
-      console.log(`onChange: ${column.id} = ${e.target.value}`);
     };
 
     const onBlur = () => {
@@ -168,29 +212,26 @@ const AllTasks = () => {
     return <Input value={value || ''} onChange={onChange} onBlur={onBlur} />;
   };
 
-  const getDefaultDueDate = (taskType) => {
+  const getDefaultDueDate = (taskType, projectEndDate) => {
     const today = moment().startOf('day');
-    let maxDateForDirect = moment().add(50, 'days').endOf('day');
-    let projectEndDate = moment('2024-02-29').endOf('day');
+    const defaultDateForDirect = today.clone().add(3, 'days');
+    let maxDateForDirect = today.clone().add(50, 'days').endOf('day');
 
-    let defaultDate, maxDate;
+    let defaultDate = defaultDateForDirect;
+    let maxDate = maxDateForDirect;
 
-    if (taskType === "Project") {
-        defaultDate = moment.min(today.clone().add(3, 'days'), projectEndDate);
-        maxDate = projectEndDate;
-    } else {
-        defaultDate = today.clone().add(3, 'days');
-        maxDate = maxDateForDirect;
-    }
-
-    if (defaultDate.isAfter(maxDate)) {
-        defaultDate = maxDate.clone();
+    if(taskType === "Project" && projectEndDate) {
+      const projectFinishMoment = moment(projectEndDate);
+      maxDate = projectFinishMoment.endOf('day');
+      if (projectFinishMoment.isBefore(defaultDateForDirect)) {
+        defaultDate = projectFinishMoment;
+      }
     }
 
     return {
-        defaultDate: defaultDate.toDate(),
-        minDate: today.toDate(),
-        maxDate: maxDate.toDate(),
+      defaultDate: defaultDate.toDate(),
+      minDate: today.toDate(),
+      maxDate: maxDate.toDate()
     };
   };
 
@@ -272,6 +313,14 @@ const AllTasks = () => {
     return statusMap[status] || status;
   };
 
+  const mapActiveToCode = (active) => {
+    const activeMap = {
+        'Active': 'A',
+        'Inactive': 'I',
+    };
+    return activeMap[active] || active;
+  };
+
   const handleApplyClick = async () => {
     if (validateFields()) {
       setLoading(true);
@@ -294,7 +343,7 @@ const AllTasks = () => {
           proposedTarget: formattedDueDate,
           targetDate: formattedDueDate,
           status: mapStatusToCode(editedRowData.status),
-          active: editedRowData.active,
+          active: mapActiveToCode(editedRowData.active),
           logDate: effectiveLogDate,
           statusDate: moment().utc().add(5, 'hours').add(30, 'minutes').format('YYYY-MM-DDTHH:mm:ss.SSS'),
           remarks: editedRowData.remarks,
@@ -306,7 +355,6 @@ const AllTasks = () => {
           dateClosed: moment().utc().add(5, 'hours').add(30, 'minutes').format('YYYY-MM-DDTHH:mm:ss.SSS'),
           dateRemoved: moment().utc().add(5, 'hours').add(30, 'minutes').format('YYYY-MM-DDTHH:mm:ss.SSS'),
       };
-      console.log(taskData);
       try {
         const response = await fetch('https://task360.osc-fr1.scalingo.io/task-360/api/v1/task', {
           method: 'POST',
@@ -317,19 +365,16 @@ const AllTasks = () => {
         });
         const data = await response.json();
         if (data.returnCode === 0) {
-          console.log('Task created successfully');
           await fetchTasks();
           toast.success('Task created successfully', {
             style: { backgroundColor: '#4BB543', color: 'white' },
           });
         } else {
-          console.error('Task Creation failed', data.returnMsg);
           toast.error('Task creation failed', {
             style: { backgroundColor: '#FF4040', color: 'white' },
           });
         }
       } catch (error) {
-        console.error('Failed to create task:', error);
         toast.error('Task creation failed', {
           style: { backgroundColor: '#FF4040', color: 'white' },
         });
@@ -384,7 +429,7 @@ const AllTasks = () => {
         proposedTarget: editedRowData.dueDate,
         targetDate: editedRowData.dueDate,
         status: mapStatusToCode(editedRowData.status),
-        active: editedRowData.active,
+        active: mapActiveToCode(editedRowData.active),
         logDate: effectiveLogDate,
         statusDate: effectiveStatusDate,
         remarks: editedRowData.remarks,
@@ -407,19 +452,16 @@ const AllTasks = () => {
         });
         const data = await response.json();
         if (data.returnCode === 0) {
-          console.log('Task updated successfully');
           await fetchTasks();
           toast.success('Task updated successfully', {
             style: { backgroundColor: '#4BB543', color: 'white' },
           });
         } else {
-          console.error('Task Updation failed', data.returnMsg);
           toast.error('Task updation failed', {
             style: { backgroundColor: '#FF4040', color: 'white' },
           });
         }
       } catch (error) {
-        console.error('Failed to update task:', error);
         toast.error('Task updation failed', {
           style: { backgroundColor: '#FF4040', color: 'white' },
         });
@@ -448,12 +490,12 @@ const AllTasks = () => {
     let updatedData = { ...editedRowData, [accessor]: value };
     
     if (accessor === "taskType") {
-      const { defaultDate } = getDefaultDueDate(value);
+      const dates = getDefaultDueDate(value);
       
       updatedData = {
         ...updatedData,
-        dueDate: moment(defaultDate).format('YYYY-MM-DD'),
-        taskType: value,
+        dueDate: dates.defaultDate,
+        plannedFinishDate: value === "Project" ? null : dates.maxDate,
       };
 
       if (value === "Direct") {
@@ -468,6 +510,8 @@ const AllTasks = () => {
         updatedData.statusDate = moment().format('YYYY-MM-DD');
         updatedData.active = "Active";
       }
+    } else if(accessor === "project") {
+      handleProjectChange(value);
     }
 
     if (accessor === "status") {
@@ -547,9 +591,20 @@ const AllTasks = () => {
       const response = await fetch(projectUrl);
       const data = await response.json();
       const projectId = data[0]?.customerId;
+      const projectEndDate = data[0]?.plannedFinishDate;
       setSelectedCustomerId(projectId);
+      setPlannedFinishDate(projectEndDate);
+
+      const { defaultDate, maxDate } = getDefaultDueDate("Project", projectEndDate);
+      setEditedRowData(prevData => ({
+        ...prevData,
+        dueDate: defaultDate,
+        plannedFinishDate: maxDate
+      }));
     } catch (error) {
-      console.error("Error fetching project details:", error);
+      toast.error('Failed to fetch project details', {
+        style: { backgroundColor: '#FF4040', color: 'white' },
+      });
     }
   };
 
@@ -565,9 +620,12 @@ const AllTasks = () => {
 
   const handleConfirmDelete = async () => {
     if (taskToDelete && taskToDelete.length > 0) {
-      const deleteRequestBody = taskToDelete.map(taskId => ({ taskId }));
+      const deleteRequestBody = taskToDelete.map(taskId => {
+        const task = TaskList.find(t => t.taskId === taskId);
+        const status = mapStatusToCode(task.status);
+        return { taskId, status };
+      });
       setLoading(true);
-
       try {
         const response = await fetch('https://task360.osc-fr1.scalingo.io/task-360/api/v1/task', {
           method: 'DELETE',
@@ -578,19 +636,16 @@ const AllTasks = () => {
         });
         const data = await response.json();
         if (data.returnCode === 0) {
-          console.log('Tasks deleted successfully');
           await fetchTasks();
           toast.success('Task deleted successfully', {
             style: { backgroundColor: '#4BB543', color: 'white' },
           });
         } else {
-          console.error('Task deletion failed', data.returnMsg);
           toast.error('Task deletion failed', {
             style: { backgroundColor: '#FF4040', color: 'white' },
           });
         }
       } catch (error) {
-        console.error('Failed to delete tasks:', error);
         toast.error('Task deletion failed', {
           style: { backgroundColor: '#FF4040', color: 'white' },
         });
@@ -785,20 +840,24 @@ const AllTasks = () => {
     let baseColumns = [
       {
         Header: () => (
-          <IndeterminateCheckbox
-            indeterminate={Object.keys(selectedRowIds).length > 0 && Object.keys(selectedRowIds).length < TaskList.length}
-            checked={Object.keys(selectedRowIds).length === TaskList.length}
-            onChange={handleSelectAllChange}
-            disabled={isCreateOrEditMode}
-          />
+          sessionStorage.getItem('userRole') !== 'PM' && (
+            <IndeterminateCheckbox
+              indeterminate={Object.keys(selectedRowIds).length > 0 && Object.keys(selectedRowIds).length < TaskList.length}
+              checked={Object.keys(selectedRowIds).length === TaskList.length}
+              onChange={handleSelectAllChange}
+              disabled={isCreateOrEditMode}
+            />
+          )
         ),
         id: 'selection',
         Cell: ({ row }) => (
-          <IndeterminateCheckbox
-            checked={selectedRowIds[row.original.taskId] === true}
-            onChange={() => handleSelectRow(row.original.taskId)}
-            disabled={isCreateOrEditMode}
-          />
+          sessionStorage.getItem('userRole') !== 'PM' && (
+            <IndeterminateCheckbox
+              checked={selectedRowIds[row.original.taskId] === true}
+              onChange={() => handleSelectRow(row.original.taskId)}
+              disabled={isCreateOrEditMode}
+            />
+          )
         ),
       },
       {
@@ -1114,7 +1173,8 @@ const AllTasks = () => {
         Cell: ({ row }) => {
           const isEditing = row.original.taskId === editableTaskId;
           const cellStyle = getCellStyle(isEditing);
-          const { minDate, maxDate } = getDefaultDueDate(editedRowData.taskType || "Direct");
+          const taskType = editedRowData.taskType || "Direct";
+          const { minDate, maxDate } = getDefaultDueDate(editedRowData.taskType, plannedFinishDate);
           if(isEditing) {
             return (
               <div style={{
@@ -1150,11 +1210,12 @@ const AllTasks = () => {
           const isEditing = row.original.taskId === editableTaskId;
           const cellStyle = getCellStyle(isEditing);
           if(isEditing) {
+            console.log(editedRowData.logDate);
             return (
               <div style={cellStyle}>
                 <Flatpickr
                   id='logDate'
-                  value={editedRowData.logDate ? new Date(editedRowData.logDate) : null}
+                  value={editedRowData.logDate ? editedRowData.logDate : null}
                   onChange={([date]) => {
                     handleEditChange(moment(date).format('YYYY-MM-DD'), "logDate");
                   }}
@@ -1373,6 +1434,11 @@ const AllTasks = () => {
                 <h5 className="card-title mb-0 flex-grow-1">All Tasks</h5>
                 <div className="flex-shrink-0">
                   <div className="d-flex flex-wrap gap-2">
+                    {TaskList.length > 0 && isFiltered && (
+                      <Button color='danger' onClick={handleResetFilters}>
+                        Reset Filter(s)
+                      </Button>
+                    )}
                     {Object.keys(selectedRowIds).length > 0 ? (
                       <>
                         <Button color='danger' onClick={triggerDeleteModal}>Delete</Button>
@@ -1380,10 +1446,10 @@ const AllTasks = () => {
                       </>
                     ) : (
                       <>
-                        {!isCreatingTask && !editableTaskId && (
+                        {!isCreatingTask && !editableTaskId && !isFiltered && (
                           <button className="btn btn-danger add-btn me-1" onClick={() => {}}><i className="ri-add-line align-bottom me-1"></i> Import</button>
                         )}
-                        {TaskList.length > 0 && !isCreatingTask && !editableTaskId && (
+                        {TaskList.length > 0 && !isCreatingTask && !editableTaskId && !isFiltered && (
                           <button className="btn btn-danger add-btn me-1" onClick={() => {}}><i className="ri-add-line align-bottom me-1"></i> Export</button>
                         )}
                         {!isCreatingTask && !editableTaskId && TaskList.length > 0 && (
@@ -1432,20 +1498,32 @@ const AllTasks = () => {
                     customPageSize={pageSize}
                     totalElements={totalElements}
                     numberOfElements={numberOfElements}
+                    onFilterChange={onFilterChange}
                   />
                 </div>
             ) : (
                 <div className="card-body text-center">
-                  <h5>No Tasks Found</h5>
-                  <p>Click on "Create Task" to add new tasks.</p>
-                  <button className="btn btn-danger add-btn" onClick={handleCreateTask}>
-                    <i className="ri-add-line align-bottom me-1"></i> Create Task
-                  </button>
+                  {isFiltered ? (
+                    <>
+                      <h5>No Tasks Found for the selected filter criteria.</h5>
+                      <Button color='danger' onClick={handleResetFilters}>
+                        Reset Filter(s)
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <h5>No Tasks Found</h5>
+                      <p>Click on "Create Task" to add new tasks.</p>
+                      <button className="btn btn-danger add-btn" onClick={handleCreateTask}>
+                        <i className="ri-add-line align-bottom me-1"></i> Create Task
+                      </button>
+                    </>
+                  )}
                 </div>
             ) 
           ) : (
             <div className="card-body text-center">
-              <Loader />
+              <TableSkeletonLoader />
             </div>
           )}
           </div>
