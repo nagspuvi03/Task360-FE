@@ -2,6 +2,7 @@
   "name": "task-360",
   "version": "1.0",
   "private": true,
+  "homepage": "https://nagspuvilink03.github.io/Task360-FE",
   "dependencies": {
     "@ckeditor/ckeditor5-build-classic": "^41.1.0",
     "@ckeditor/ckeditor5-react": "^6.2.0",
@@ -97,6 +98,8 @@
   },
   "scripts": {
     "start": "react-scripts start",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
@@ -121,6 +124,7 @@
     "@types/lodash": "^4.14.202",
     "@types/react-bootstrap-table2-paginator": "^2.1.6",
     "@types/react-bootstrap-table2-toolkit": "^2.1.13",
-    "babel-eslint": "^10.1.0"
+    "babel-eslint": "^10.1.0",
+    "gh-pages": "^6.1.1"
   }
 }
