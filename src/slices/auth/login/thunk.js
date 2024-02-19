@@ -6,7 +6,7 @@ import axios from "axios";
 
 export const loginUser = (user, navigate) => async (dispatch) => {
   try {
-    const response = await axios.post('http://task360.osc-fr1.scalingo.io/task-360/api/v1/auth/login', {
+    const response = await axios.post('https://task360-dev.osc-fr1.scalingo.io/task-360/api/v1/auth/login', {
       userId: user.userId,
       password: user.password
     });
