@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardBody, Table } from 'reactstrap';
 
 const TableSkeletonLoader = () => {
-  const rows = 100;
+  const rows = 50;
   const cols = 16;
 
   const SkeletonRow = () => (

@@ -16,9 +16,9 @@ const TaskListGlobalFilter = ({ onFilterChange }) => {
     useEffect(() => {
         const fetchDropdownData = async () => {
         try {
-            const usersResponse = await fetch('https://task360.osc-fr1.scalingo.io/task-360/api/v1/auth/users');
-            const projectsResponse = await fetch('https://task360.osc-fr1.scalingo.io/task-360/api/v1/project');
-            const customersResponse = await fetch('https://task360.osc-fr1.scalingo.io/task-360/api/v1/customer');
+            const usersResponse = await fetch('https://task360-dev.osc-fr1.scalingo.io/task-360/api/v1/auth/users');
+            const projectsResponse = await fetch('https://task360-dev.osc-fr1.scalingo.io/task-360/api/v1/project');
+            const customersResponse = await fetch('https://task360-dev.osc-fr1.scalingo.io/task-360/api/v1/customer');
             
             const usersData = await usersResponse.json();
             const projectsData = await projectsResponse.json();
@@ -85,6 +85,7 @@ const TaskListGlobalFilter = ({ onFilterChange }) => {
 
     const mapActiveToCode = (active) => {
         const activeMap = {
+            'Active': 'A',
             'Inactive': 'I',
         };
         return activeMap[active] || active;
@@ -169,6 +170,7 @@ const TaskListGlobalFilter = ({ onFilterChange }) => {
                 <div className="input-light">
                     <select className="form-control" data-choices data-choices-search-false name="active" id="idActive" onChange={handleActiveChange}>
                         <option value="">Active</option>
+                        <option value="Active">Active</option>
                         <option value="Inactive">Inactive</option>
                     </select>
                 </div>

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, forwardRef } from 'react';
 import TableContainer from '../../../Components/Common/TableContainer';
 import DeleteModal from "../../../Components/Common/DeleteModal";
-import Loader from "../../../Components/Common/Loader";
 import Flatpickr from "react-flatpickr";
 import { Col, Input, Button } from 'reactstrap';
 import { handleValidDate } from "./TaskListCol";
@@ -50,9 +49,9 @@ const AllTasks = () => {
   useEffect(() => {
     const fetchDropdownData = async () => {
       try {
-        const usersResponse = await fetch('https://task360.osc-fr1.scalingo.io/task-360/api/v1/auth/users');
-        const projectsResponse = await fetch('https://task360.osc-fr1.scalingo.io/task-360/api/v1/project');
-        const customersResponse = await fetch('https://task360.osc-fr1.scalingo.io/task-360/api/v1/customer');
+        const usersResponse = await fetch('https://task360-dev.osc-fr1.scalingo.io/task-360/api/v1/auth/users');
+        const projectsResponse = await fetch('https://task360-dev.osc-fr1.scalingo.io/task-360/api/v1/project');
+        const customersResponse = await fetch('https://task360-dev.osc-fr1.scalingo.io/task-360/api/v1/customer');
         
         const usersData = await usersResponse.json();
         const projectsData = await projectsResponse.json();
@@ -117,7 +116,7 @@ const AllTasks = () => {
   const fetchTasks = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`https://task360.osc-fr1.scalingo.io/task-360/api/v1/task/getTasks?page=${currentPage}&pageSize=${pageSize}`, {
+      const response = await fetch(`https://task360-dev.osc-fr1.scalingo.io/task-360/api/v1/task/getTasks?page=${currentPage}&pageSize=${pageSize}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -151,6 +150,7 @@ const AllTasks = () => {
           assigned: task.assignedYn,
           dueDate: task.proposedTarget
         }));
+        console.log(mappedTasks);
         setTaskList(mappedTasks);
       } else {
         toast.error('Failed to fetch tasks', {
@@ -297,7 +297,6 @@ const AllTasks = () => {
     setEditedRowData({});
     setIsCreatingTask(false);
     setMode(null);
-    scrollToCheckbox();
   };
 
   const mapStatusToCode = (status) => {
@@ -356,7 +355,7 @@ const AllTasks = () => {
           dateRemoved: moment().utc().add(5, 'hours').add(30, 'minutes').format('YYYY-MM-DDTHH:mm:ss.SSS'),
       };
       try {
-        const response = await fetch('https://task360.osc-fr1.scalingo.io/task-360/api/v1/task', {
+        const response = await fetch('https://task360-dev.osc-fr1.scalingo.io/task-360/api/v1/task', {
           method: 'POST',
           headers: {
               'Content-Type': 'application/json',
@@ -389,7 +388,6 @@ const AllTasks = () => {
       setEditedRowData({});
       setIsCreatingTask(false);
       setNewTaskIds(prevIds => prevIds.filter(id => id !== editableTaskId));
-      scrollToCheckbox();
       setMode(null);
     } else {
       setTriggerAnimation(!triggerAnimation);
@@ -443,7 +441,7 @@ const AllTasks = () => {
       }
 
       try {
-        const response = await fetch('https://task360.osc-fr1.scalingo.io/task-360/api/v1/task', {
+        const response = await fetch('https://task360-dev.osc-fr1.scalingo.io/task-360/api/v1/task', {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -586,7 +584,7 @@ const AllTasks = () => {
 
   const handleProjectChange = async (projectNumber) => {
     setSelectedProject(projectNumber);
-    const projectUrl = `https://task360.osc-fr1.scalingo.io/task-360/api/v1/project/${projectNumber}`;
+    const projectUrl = `https://task360-dev.osc-fr1.scalingo.io/task-360/api/v1/project/${projectNumber}`;
     try {
       const response = await fetch(projectUrl);
       const data = await response.json();
@@ -627,7 +625,7 @@ const AllTasks = () => {
       });
       setLoading(true);
       try {
-        const response = await fetch('https://task360.osc-fr1.scalingo.io/task-360/api/v1/task', {
+        const response = await fetch('https://task360-dev.osc-fr1.scalingo.io/task-360/api/v1/task', {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
@@ -788,13 +786,6 @@ const AllTasks = () => {
           break;
         }
       }
-    }
-  };
-
-  const scrollToCheckbox = () => {
-    const firstCheckbox = document.querySelector('.table tbody tr:first-child td:first-child input[type="checkbox"]');
-    if (firstCheckbox) {
-      firstCheckbox.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   };
 
@@ -1491,7 +1482,7 @@ const AllTasks = () => {
                     theadClass="table-light table-nowrap"
                     thClass="table-light text-muted"
                     isTaskListFilter={true}
-                    SearchPlaceholder='Search for tasks or something...'
+                    SearchPlaceholder='Search for something...'
                     currentPage={currentPage}
                     totalPages={totalPages}
                     onPageChange={onPageChange}
