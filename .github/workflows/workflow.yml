@@ -2,8 +2,8 @@ name: Build on Feature Branch
 
 on:
   push:
-    branches:
-      - '**'
+    branches-ignore:
+      - 'main'
 
 jobs:
   build:
