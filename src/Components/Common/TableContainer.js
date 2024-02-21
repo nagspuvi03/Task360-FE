@@ -153,7 +153,9 @@ const TableContainer = ({
       60: 40,
       80: 50
     };
-    return totalElements >= thresholds[position];
+    const minimumThreshold = thresholds[position];
+    const actualOnPage = currentPage === totalPages - 1 ? numberOfElements : customPageSize;  
+    return actualOnPage >= minimumThreshold;
   };
 
   return (

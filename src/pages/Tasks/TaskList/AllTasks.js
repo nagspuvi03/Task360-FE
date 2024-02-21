@@ -11,6 +11,9 @@ import { ToastContainer, toast } from 'react-toastify';
 import TableSkeletonLoader from '../../../Components/Common/TableSkeletonLoader';
 
 const AllTasks = () => {
+  const userRole = sessionStorage.getItem('userRole');
+  const userId = sessionStorage.getItem('userId');
+
   const [TaskList, setTaskList] = useState([]);
   const [editableTaskId, setEditableTaskId] = useState(null);
   const [originalRowData, setOriginalRowData] = useState({});
@@ -43,14 +46,16 @@ const AllTasks = () => {
     toDate: null,
     status: null,
     responsibility: null,
-    activeFlag: null
+    activeFlag: null,
+    userId: userId,
+    role: userRole
   });
 
   useEffect(() => {
     const fetchDropdownData = async () => {
       try {
         const usersResponse = await fetch('https://task360-dev.osc-fr1.scalingo.io/task-360/api/v1/auth/users');
-        const projectsResponse = await fetch('https://task360-dev.osc-fr1.scalingo.io/task-360/api/v1/project');
+        const projectsResponse = await fetch(`https://task360-dev.osc-fr1.scalingo.io/task-360/api/v1/project/${userId}/${userRole}`);
         const customersResponse = await fetch('https://task360-dev.osc-fr1.scalingo.io/task-360/api/v1/customer');
         
         const usersData = await usersResponse.json();
@@ -109,7 +114,9 @@ const AllTasks = () => {
       toDate: null,
       status: null,
       responsibility: null,
-      activeFlag: null
+      activeFlag: null,
+      userId: userId,
+      role: userRole
     })
   };
 
@@ -128,7 +135,9 @@ const AllTasks = () => {
           toDate: filters.toDate,
           status: filters.status,
           responsibility: filters.responsibility,
-          activeFlag: filters.active
+          activeFlag: filters.active,
+          userId: userId,
+          role: userRole
         }),
       });
       if (response.ok) {
@@ -136,21 +145,21 @@ const AllTasks = () => {
         console.log(filterFlag);
         setIsFiltered(filterFlag === 'Y');
         const data = await response.json();
-        setTotalPages(data.totalPages);
-        setTotalElements(data.totalElements);
-        setNumberOfElements(data.numberOfElements);
-        const mappedTasks = data.content.map(task => ({
+        setTotalPages(data.taskResponsePage.totalPages);
+        setTotalElements(data.taskResponsePage.totalElements);
+        setNumberOfElements(data.taskResponsePage.numberOfElements);
+        const mappedTasks = data.taskResponsePage.content.map(task => ({
           ...task,
           taskType: task.type ? (task.type === 'D' ? 'Direct' : 'Project') : null,
           status: mapStatus(task.status),
           active: mapActive(task.active),
-          project: task.projectNumber,
+          project: task.projectName,
+          customer: task.customerName,
           function: task.functionArea,
           task: task.taskDescription,
           assigned: task.assignedYn,
           dueDate: task.proposedTarget
         }));
-        console.log(mappedTasks);
         setTaskList(mappedTasks);
       } else {
         toast.error('Failed to fetch tasks', {
@@ -831,7 +840,7 @@ const AllTasks = () => {
     let baseColumns = [
       {
         Header: () => (
-          sessionStorage.getItem('userRole') !== 'PM' && (
+          userRole !== 'PM' && (
             <IndeterminateCheckbox
               indeterminate={Object.keys(selectedRowIds).length > 0 && Object.keys(selectedRowIds).length < TaskList.length}
               checked={Object.keys(selectedRowIds).length === TaskList.length}
@@ -842,7 +851,7 @@ const AllTasks = () => {
         ),
         id: 'selection',
         Cell: ({ row }) => (
-          sessionStorage.getItem('userRole') !== 'PM' && (
+          userRole !== 'PM' && (
             <IndeterminateCheckbox
               checked={selectedRowIds[row.original.taskId] === true}
               onChange={() => handleSelectRow(row.original.taskId)}
@@ -867,6 +876,7 @@ const AllTasks = () => {
                 onChange={(e) => 
                   handleEditChange(e.target.value, "taskType")
                 }
+                disabled={userRole === 'PM'}
                 style={{
                   ...cellStyle,
                   ...(validationErrors.taskType && errorStyle),
@@ -1032,7 +1042,7 @@ const AllTasks = () => {
                       </Link>
                     </li>
                   )}
-                  {sessionStorage.getItem('userRole') !== 'PM' && (
+                  {userRole !== 'PM' && (
                     <li className="list-inline-item">
                       <Link to="#" className="remove-item-btn" onClick={() => handleDeleteClick(row.original.taskId)}>
                         <i className="ri-delete-bin-fill align-bottom me-2 text-muted"></i>
