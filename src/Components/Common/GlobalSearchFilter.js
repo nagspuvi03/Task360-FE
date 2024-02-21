@@ -13,11 +13,14 @@ const TaskListGlobalFilter = ({ onFilterChange }) => {
     const [customerDropdownData, setCustomerDropdownData] = useState([]);
     const [responsibilityDropdownData, setResponsibilityDropdownData] = useState([]);
 
+    const userRole = sessionStorage.getItem('userRole');
+    const userId = sessionStorage.getItem('userId');
+
     useEffect(() => {
         const fetchDropdownData = async () => {
         try {
             const usersResponse = await fetch('https://task360-dev.osc-fr1.scalingo.io/task-360/api/v1/auth/users');
-            const projectsResponse = await fetch('https://task360-dev.osc-fr1.scalingo.io/task-360/api/v1/project');
+            const projectsResponse = await fetch(`https://task360-dev.osc-fr1.scalingo.io/task-360/api/v1/project/${userId}/${userRole}`);
             const customersResponse = await fetch('https://task360-dev.osc-fr1.scalingo.io/task-360/api/v1/customer');
             
             const usersData = await usersResponse.json();
@@ -154,17 +157,19 @@ const TaskListGlobalFilter = ({ onFilterChange }) => {
                     </select>
                 </div>
             </div>
-
-            <div className="col-sm-auto">
-                <div className="input-light">
-                    <select className="form-control" data-choices data-choices-search-false name="responsibility" id="idResponsibility" onChange={handleResponsibilityChange}>
-                        <option value="">Responsibility</option>
-                        {responsibilityDropdownData.map((user) => (
-                            <option key={user.userId} value={user.userId}>{user.userName}</option>
-                        ))}
-                    </select>
+            
+            {userRole !== 'PM' && (
+                <div className="col-sm-auto">
+                    <div className="input-light">
+                        <select className="form-control" data-choices data-choices-search-false name="responsibility" id="idResponsibility" onChange={handleResponsibilityChange}>
+                            <option value="">Responsibility</option>
+                            {responsibilityDropdownData.map((user) => (
+                                <option key={user.userId} value={user.userId}>{user.userName}</option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
-            </div>
+            )}
 
             <div className="col-sm-auto">
                 <div className="input-light">
