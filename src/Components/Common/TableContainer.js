@@ -15,7 +15,11 @@ function GlobalFilter({
   globalFilter,
   setGlobalFilter,
   isTaskListFilter,
+  users,
+  projects,
+  customers,
   onFilterChange,
+  filterValues,
   SearchPlaceholder
 }) {
   const [value, setValue] = React.useState(globalFilter);
@@ -45,7 +49,13 @@ function GlobalFilter({
               </div>
             </Col>
             {isTaskListFilter && (
-              <TaskListGlobalFilter onFilterChange={onFilterChange} />
+              <TaskListGlobalFilter
+                users={users}
+                projects={projects}
+                customers={customers}
+                onFilterChange={onFilterChange}
+                filterValues={filterValues}      
+              />
             )}
           </Row>
         </form>
@@ -62,6 +72,10 @@ const TableContainer = ({
   currentPage,
   onPageChange,
   onFilterChange,
+  filterValues,
+  users,
+  projects,
+  customers,
   customPageSize,
   totalElements,
   numberOfElements,
@@ -182,6 +196,10 @@ const TableContainer = ({
             isTaskListFilter={isTaskListFilter}
             onFilterChange={onFilterChange}
             SearchPlaceholder={SearchPlaceholder}
+            filterValues={filterValues}
+            users={users}
+            projects={projects}
+            customers={customers}
           />
         )}
       </Row>

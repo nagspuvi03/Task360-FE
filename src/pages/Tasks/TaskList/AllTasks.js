@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, forwardRef } from 'react';
 import TableContainer from '../../../Components/Common/TableContainer';
 import DeleteModal from "../../../Components/Common/DeleteModal";
+import ImportTasksModal from '../../../Components/Common/ImportTasksModal';
 import Flatpickr from "react-flatpickr";
 import { Col, Input, Button } from 'reactstrap';
 import { handleValidDate } from "./TaskListCol";
@@ -9,6 +10,8 @@ import moment from 'moment';
 import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer, toast } from 'react-toastify';
 import TableSkeletonLoader from '../../../Components/Common/TableSkeletonLoader';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 const AllTasks = () => {
   const userRole = sessionStorage.getItem('userRole');
@@ -18,6 +21,7 @@ const AllTasks = () => {
   const [editableTaskId, setEditableTaskId] = useState(null);
   const [originalRowData, setOriginalRowData] = useState({});
   const [editedRowData, setEditedRowData] = useState({});
+  const [timeTaken, setTimeTaken] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState(null);
   const [newTaskIds, setNewTaskIds] = useState([]);
@@ -39,6 +43,7 @@ const AllTasks = () => {
   const [selectedCustomerId, setSelectedCustomerId] = useState(null);
   const [plannedFinishDate, setPlannedFinishDate] = useState(null);
   const [isFiltered, setIsFiltered] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [filters, setFilters] = useState({
     project: null,
     customer: null,
@@ -50,11 +55,20 @@ const AllTasks = () => {
     userId: userId,
     role: userRole
   });
+  const [filterValues, setFilterValues] = useState({
+    fromDate: '',
+    toDate: '',
+    project: '',
+    customer: '',
+    status: '',
+    responsibility: '',
+    activeFlag: ''
+  });
 
   useEffect(() => {
     const fetchDropdownData = async () => {
       try {
-        const usersResponse = await fetch('https://task360-dev.osc-fr1.scalingo.io/task-360/api/v1/auth/users');
+        const usersResponse = await fetch('https://task360-dev.osc-fr1.scalingo.io/task-360/api/v1/users');
         const projectsResponse = await fetch(`https://task360-dev.osc-fr1.scalingo.io/task-360/api/v1/project/${userId}/${userRole}`);
         const customersResponse = await fetch('https://task360-dev.osc-fr1.scalingo.io/task-360/api/v1/customer');
         
@@ -101,7 +115,9 @@ const AllTasks = () => {
   const onFilterChange = (newFilters) => {
     setFilters(prevFilters => ({
       ...prevFilters,
-      ...newFilters
+      ...newFilters,
+      userId: userId,
+      role: userRole
     }));
   };
 
@@ -122,6 +138,7 @@ const AllTasks = () => {
 
   const fetchTasks = async () => {
     setLoading(true);
+    console.log("Filters applied: ", JSON.stringify(filters));
     try {
       const response = await fetch(`https://task360-dev.osc-fr1.scalingo.io/task-360/api/v1/task/getTasks?page=${currentPage}&pageSize=${pageSize}`, {
         method: 'POST',
@@ -142,9 +159,9 @@ const AllTasks = () => {
       });
       if (response.ok) {
         const filterFlag = response.headers.get('Filter-Flag');
-        console.log(filterFlag);
         setIsFiltered(filterFlag === 'Y');
         const data = await response.json();
+        console.log("Response Data: ", data);
         setTotalPages(data.taskResponsePage.totalPages);
         setTotalElements(data.taskResponsePage.totalElements);
         setNumberOfElements(data.taskResponsePage.numberOfElements);
@@ -161,6 +178,15 @@ const AllTasks = () => {
           dueDate: task.proposedTarget
         }));
         setTaskList(mappedTasks);
+        setFilterValues({
+          fromDate: data.filterFields.fromDate,
+          toDate: data.filterFields.toDate,
+          project: data.filterFields.project,
+          customer: data.filterFields.customer,
+          status: data.filterFields.status,
+          responsibility: data.filterFields.responsibility,
+          activeFlag: data.filterFields.activeFlag
+        });
       } else {
         toast.error('Failed to fetch tasks', {
           style: { backgroundColor: '#FF4040', color: 'white' },
@@ -183,42 +209,66 @@ const AllTasks = () => {
     setCurrentPage(newPage);
   };
 
-  const updateMyData = (id, columnId, value) => {
-    setTaskList(old =>
-      old.map((row) => {
-        if (row.taskId === id) {
-          return {
-            ...row,
-            [columnId]: value,
-          };
-        }
-        return row;
-      })
-    );
-  };
+  const updateMyData = React.useCallback((taskId, columnId, value) => {
+    setTaskList((oldData) => oldData.map((row) => {
+      if (row.taskId === taskId) {
+        return {
+          ...row,
+          [columnId]: value,
+        };
+      }
+      return row;
+    }));
+  }, []);
 
   const EditableCell = ({
-    initialValue,
+    value: initialValue,
     taskId,
-    column,
+    column: { id },
     updateMyData,
+    isEditing,
+    additionalProps,
   }) => {
-    const [value, setValue] = useState(initialValue);
+    const [localValue, setLocalValue] = useState(initialValue);
+    const value = id === 'timeTaken' ? timeTaken : localValue;
+    const setValue = id === 'timeTaken' ? setTimeTaken : setLocalValue;
 
-    const onChange = e => {
+    const onChange = (e) => {
+      console.log(`Value changed for Task ID: ${taskId}, Column: ${id}, New Value: ${e.target.value}`);
       setValue(e.target.value);
     };
 
     const onBlur = () => {
-      updateMyData(taskId, column.id, value);
-      console.log(`onBlur: Committing ${column.id} = ${value}`);
+      if (id !== 'timeTaken') {
+        updateMyData(taskId, id, value);
+      } else {
+        handleTimeTakenUpdate(taskId, value);
+      }
     };
 
     useEffect(() => {
-      setValue(initialValue);
-    }, [initialValue]);
+     if (id !== 'timeTaken') {
+       setLocalValue(initialValue);
+     }
+    }, [initialValue, id]);
 
-    return <Input value={value || ''} onChange={onChange} onBlur={onBlur} />;
+    if (!isEditing) {
+      return <span>{initialValue}</span>;
+    }
+
+    return (
+      <Input
+        type="number"
+        value={value}
+        onChange={onChange}
+        onBlur={onBlur}
+        {...additionalProps}
+      />
+    );
+  };
+
+  const handleTimeTakenUpdate = (taskId, newValue) => {
+    updateMyData(taskId, 'timeTaken', newValue);
   };
 
   const getDefaultDueDate = (taskType, projectEndDate) => {
@@ -276,6 +326,41 @@ const AllTasks = () => {
     setMode('create');
   };
 
+  const handleCreateTaskFilters = () => {
+    setIsCreatingTask(true);
+    const newTaskId = `new_${Date.now()}`;
+    const { defaultDate } = getDefaultDueDate("Direct");
+
+    const newTask = {
+      id: newTaskId,
+      taskId: newTaskId,
+      taskType: filterValues.project ? "Project" : "Direct",
+      project: filterValues.project ? filterValues.project : "",
+      customer: filterValues.customer ? filterValues.customer : "",
+      function: "",
+      task: "",
+      priority: "A",
+      assigned: filterValues.responsibility ? "Yes" : "No",
+      responsibility: filterValues.responsibility ? filterValues.responsibility : "",
+      dueDate: defaultDate,
+      logDate: moment().format('YYYY-MM-DD'),
+      status: "New",
+      statusDate: moment().format('YYYY-MM-DD'),
+      remarks: "",
+      timeTaken: "",
+      active: "Active",
+      createdAt: new Date().toISOString(),
+    };
+    setTaskList(prevTaskList => [newTask, ...prevTaskList]);
+    setEditableTaskId(newTaskId);
+    setNewTaskIds(prevNewTaskIds => [...prevNewTaskIds, newTaskId]);
+    setEditedRowData(newTask);
+    setMode('create');
+    if(newTask.taskType === "Project" && newTask.project) {
+      fetchAndSetProjectDetails(newTask.project);
+    }
+  };
+
   const handleEditClick = (taskData) => {
     setEditableTaskId(taskData.taskId);
     setOriginalRowData(taskData);
@@ -306,6 +391,7 @@ const AllTasks = () => {
     setEditedRowData({});
     setIsCreatingTask(false);
     setMode(null);
+    setSelectedCustomerId(null);
   };
 
   const mapStatusToCode = (status) => {
@@ -342,7 +428,7 @@ const AllTasks = () => {
       const taskData = {
           type: editedRowData.taskType === 'Direct' ? 'D' : 'P',
           projectNumber: editedRowData.project ? editedRowData.project : null,
-          customer: editedRowData.customer,
+          customer: selectedCustomerId,
           functionArea: editedRowData.function,
           taskDescription: editedRowData.task,
           priority: editedRowData.priority,
@@ -363,6 +449,7 @@ const AllTasks = () => {
           dateClosed: moment().utc().add(5, 'hours').add(30, 'minutes').format('YYYY-MM-DDTHH:mm:ss.SSS'),
           dateRemoved: moment().utc().add(5, 'hours').add(30, 'minutes').format('YYYY-MM-DDTHH:mm:ss.SSS'),
       };
+      console.log("Create Tasks request body : ", JSON.stringify([taskData]));
       try {
         const response = await fetch('https://task360-dev.osc-fr1.scalingo.io/task-360/api/v1/task', {
           method: 'POST',
@@ -615,6 +702,31 @@ const AllTasks = () => {
     }
   };
 
+  const fetchAndSetProjectDetails = async (projectNumber) => {
+    try {
+      const projectUrl = `https://task360-dev.osc-fr1.scalingo.io/task-360/api/v1/project/${projectNumber}`;
+      const response = await fetch(projectUrl);
+      const data = await response.json();
+      if(data && data.length > 0) {
+        const projectId = data[0]?.customerId;
+        const projectEndDate = data[0]?.plannedFinishDate;
+        setSelectedCustomerId(projectId);
+        setPlannedFinishDate(projectEndDate);
+
+        const { defaultDate, maxDate } = getDefaultDueDate("Project", projectEndDate);
+        setEditedRowData(prevData => ({
+          ...prevData,
+          dueDate: defaultDate,
+          plannedFinishDate: maxDate
+        }));
+      }
+    } catch (error) {
+      toast.error('Failed to fetch project details', {
+        style: { backgroundColor: '#FF4040', color: 'white' },
+      });
+    }
+  };
+
   const handleDeleteClick = (taskId) => {
     setShowDeleteModal(true);
     setTaskToDelete([taskId]);
@@ -626,13 +738,14 @@ const AllTasks = () => {
   }
 
   const handleConfirmDelete = async () => {
+    setShowDeleteModal(false);
+    setLoading(true);
     if (taskToDelete && taskToDelete.length > 0) {
       const deleteRequestBody = taskToDelete.map(taskId => {
         const task = TaskList.find(t => t.taskId === taskId);
         const status = mapStatusToCode(task.status);
         return { taskId, status };
       });
-      setLoading(true);
       try {
         const response = await fetch('https://task360-dev.osc-fr1.scalingo.io/task-360/api/v1/task', {
           method: 'DELETE',
@@ -804,6 +917,73 @@ const AllTasks = () => {
     }
   }, [validationErrors]);
 
+  const exportToExcel = (data, fileName) => {
+    const formattedData = data.map(task => ({
+      'Task Type': task.type === 'D' ? 'Direct' : 'Project',
+      'Project Name': task.projectName,
+      'Customer': task.customerName,
+      'Function': task.functionArea,
+      'Task Description': task.taskDescription,
+      'Priority': task.priority,
+      'Assigned': task.assignedYn === 'Yes' ? 'Yes' : 'No',
+      'Responsibility': task.responsibility,
+      'Proposed Target': moment(task.proposedTarget).format('YYYY-MM-DD'),
+      'Log Date': moment(task.logDate).format('YYYY-MM-DD'),
+      'Status': task.status,
+      'Status Date': moment(task.statusDate).format('YYYY-MM-DD'),
+      'Remarks': task.remarks,
+      'Time Taken': task.timeTaken,
+      'Active': task.active === 'A' ? 'Active' : 'Inactive',
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(formattedData);
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Task Sheet");
+
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
+
+    saveAs(blob, `${fileName}.xlsx`);
+  }
+
+  const handleExportClick = () => {
+    exportToExcel(TaskList, "Task360");
+  };
+
+  const onTasksImported = async (tasks) => {
+    setLoading(true);
+    setShowImportModal(false);
+    console.log("Imported tasks data : ", JSON.stringify(tasks));
+    try {
+      const response = await fetch('https://task360-dev.osc-fr1.scalingo.io/task-360/api/v1/task', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(tasks),
+      });
+      const data = await response.json();
+      if (data.returnCode === 0) {
+        await fetchTasks();
+        toast.success('Task(s) imported successfully', {
+          style: { backgroundColor: '#4BB543', color: 'white' },
+        });
+      } else {
+        toast.error('Task(s) import failed. Please enter data in proper format & retry importing again.', {
+          style: { backgroundColor: '#FF4040', color: 'white' },
+        });
+      }
+    } catch (error) {
+      toast.error('Task(s) import failed', {
+        style: { backgroundColor: '#FF4040', color: 'white' },
+      });
+    } finally {
+      fetchTasks();
+      setLoading(false);
+    }
+  };
+
   const errorStyle = {
     border: '1px solid red',
   };
@@ -949,7 +1129,7 @@ const AllTasks = () => {
                 onChange={(e) => 
                   handleEditChange(e.target.value, "customer")
                 }
-                disabled={editedRowData.taskType === "Project" && !!editedRowData.project}
+                disabled={(editedRowData.taskType === "Project" && !!editedRowData.project) || (userRole === 'PM' && mode === 'edit')}
                 style={cellStyle}
               >
                 <option value="">Select</option>
@@ -983,6 +1163,7 @@ const AllTasks = () => {
                   ...(validationErrors.function && errorStyle),
                   animation: validationErrors.function ? 'shake 0.5s' : 'none'
                 }}
+                disabled={userRole === 'PM' && mode === 'edit'}
                 key={`task-${triggerAnimation}`}
               >
                 <option value="">Select</option>
@@ -1013,6 +1194,7 @@ const AllTasks = () => {
                 onChange={(e) => 
                   handleEditChange(e.target.value, "task")
                 }
+                disabled={userRole === 'PM' && mode === 'edit'}
                 style={{
                   ...cellStyle,
                   ...(validationErrors.task && errorStyle),
@@ -1071,6 +1253,7 @@ const AllTasks = () => {
                 onChange={(e) => 
                   handleEditChange(e.target.value, "priority")
                 }
+                disabled={userRole === 'PM' && mode === 'edit'}
                 style={{
                   ...cellStyle,
                   ...(validationErrors.priority && errorStyle),
@@ -1174,7 +1357,6 @@ const AllTasks = () => {
         Cell: ({ row }) => {
           const isEditing = row.original.taskId === editableTaskId;
           const cellStyle = getCellStyle(isEditing);
-          const taskType = editedRowData.taskType || "Direct";
           const { minDate, maxDate } = getDefaultDueDate(editedRowData.taskType, plannedFinishDate);
           if(isEditing) {
             return (
@@ -1196,6 +1378,7 @@ const AllTasks = () => {
                     minDate: minDate,
                     maxDate: maxDate
                   }}
+                  disabled={userRole === 'PM' && mode === 'edit'}
                 />
               </div>
             );
@@ -1227,6 +1410,7 @@ const AllTasks = () => {
                     minDate: new Date().fp_incr(-3),
                     maxDate: new Date()
                   }}
+                  disabled={userRole === 'PM' && mode === 'edit'}
                 />
               </div>
             );
@@ -1355,7 +1539,6 @@ const AllTasks = () => {
       {
         Header: "Time Taken (Hours)",
         accessor: "timeTaken",
-        filterable: false,
         Cell: ({ row }) => {
           const isEditing = row.original.taskId === editableTaskId;
           const cellStyle = getCellStyle(isEditing);
@@ -1372,14 +1555,14 @@ const AllTasks = () => {
                 style={{
                   ...cellStyle,
                   ...(validationErrors.timeTaken && errorStyle),
-                  animation: validationErrors.taskType ? 'shake 0.5s' : 'none'
+                  animation: validationErrors.timeTaken ? 'shake 0.5s' : 'none'
                 }}
               />
             );
           };
           return <span>{row.original.timeTaken}</span>
         },
-      },
+      }
     ];
 
     if (!isCreatingTask) {
@@ -1432,42 +1615,46 @@ const AllTasks = () => {
           <div className="card" id="tasksList">
             <div className="card-header border-0">
               <div className="d-flex align-items-center">
-                <h5 className="card-title mb-0 flex-grow-1">All Tasks</h5>
+                {!loading && <h5 className="card-title mb-0 flex-grow-1">All Tasks</h5>}
                 <div className="flex-shrink-0">
                   <div className="d-flex flex-wrap gap-2">
-                    {TaskList.length > 0 && isFiltered && (
+                    {TaskList.length > 0 && isFiltered && mode !== 'edit' && mode !== 'create' && !loading && (
                       <Button color='danger' onClick={handleResetFilters}>
                         Reset Filter(s)
                       </Button>
                     )}
                     {Object.keys(selectedRowIds).length > 0 ? (
                       <>
-                        <Button color='danger' onClick={triggerDeleteModal}>Delete</Button>
-                        <Button color='secondary' onClick={clearSelection}>Cancel</Button>
+                        {!loading && <Button color='danger' onClick={triggerDeleteModal}>Delete</Button>}
+                        {!loading && <Button color='secondary' onClick={clearSelection}>Cancel</Button>}
                       </>
                     ) : (
                       <>
-                        {!isCreatingTask && !editableTaskId && !isFiltered && (
-                          <button className="btn btn-danger add-btn me-1" onClick={() => {}}><i className="ri-add-line align-bottom me-1"></i> Import</button>
+                        {!isCreatingTask && !editableTaskId && !isFiltered && !loading && (
+                          <button className="btn btn-danger add-btn me-1" onClick={() => setShowImportModal(true)}><i className="ri-add-line align-bottom me-1"></i>  Import
+                          </button>
                         )}
-                        {TaskList.length > 0 && !isCreatingTask && !editableTaskId && !isFiltered && (
-                          <button className="btn btn-danger add-btn me-1" onClick={() => {}}><i className="ri-add-line align-bottom me-1"></i> Export</button>
+                        {TaskList.length > 0 && !isCreatingTask && !editableTaskId && !isFiltered && !loading && (
+                          <button className="btn btn-danger add-btn me-1" onClick={handleExportClick}><i className="ri-add-line align-bottom me-1"></i> Export</button>
                         )}
-                        {!isCreatingTask && !editableTaskId && TaskList.length > 0 && (
+                        {!isCreatingTask && !editableTaskId && TaskList.length > 0 && !loading && (
                           <button className="btn btn-danger add-btn me-1" onClick={handleCreateTask}><i className="ri-add-line align-bottom me-1"></i> Create Task</button>
+                        )}
+                        {!isCreatingTask && !editableTaskId && isFiltered && TaskList.length > 0 && !loading && (
+                          <button className="btn btn-danger add-btn me-1" onClick={handleCreateTaskFilters}><i className="ri-add-line align-bottom me-1"></i> Create Task based on Filter(s)</button>
                         )}
                       </>
                     )}
                     {(isCreatingTask || editableTaskId) && (
                       <>
-                        <Button color='secondary' onClick={handleCancelClick}>Cancel</Button>
+                        {!loading && <Button color='secondary' onClick={handleCancelClick}>Cancel</Button>}
                         {
-                          mode === 'create' && (
+                          mode === 'create' && !loading && (
                             <Button color='primary' onClick={handleApplyClick}>Apply</Button>
                           )
                         }
                         {
-                          mode === 'edit' && (
+                          mode === 'edit' && !loading && (
                             <Button color='primary' onClick={handleUpdateClick}>Update</Button>
                           )
                         }
@@ -1500,6 +1687,10 @@ const AllTasks = () => {
                     totalElements={totalElements}
                     numberOfElements={numberOfElements}
                     onFilterChange={onFilterChange}
+                    filterValues={filterValues}
+                    users={users}
+                    projects={projects}
+                    customers={customers}
                   />
                 </div>
             ) : (
@@ -1507,9 +1698,9 @@ const AllTasks = () => {
                   {isFiltered ? (
                     <>
                       <h5>No Tasks Found for the selected filter criteria.</h5>
-                      <Button color='danger' onClick={handleResetFilters}>
-                        Reset Filter(s)
-                      </Button>
+                        <Button color='danger' onClick={handleResetFilters}>
+                          Reset Filter(s)
+                        </Button>
                     </>
                   ) : (
                     <>
@@ -1535,6 +1726,12 @@ const AllTasks = () => {
         show={showDeleteModal}
         onDeleteClick={handleConfirmDelete}
         onCloseClick={handleCloseDeleteModal}
+      />
+
+      <ImportTasksModal
+        show={showImportModal}
+        onCloseClick={() => setShowImportModal(false)}
+        onTasksImported={onTasksImported}
       />
     </React.Fragment>
   );

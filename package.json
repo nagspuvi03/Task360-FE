@@ -31,6 +31,7 @@
     "eslint": "^8.56.0",
     "express": "^4.18.2",
     "feather-icons-react": "^0.7.0",
+    "file-saver": "^2.0.5",
     "filepond": "^4.30.6",
     "filepond-plugin-image-exif-orientation": "^1.0.11",
     "filepond-plugin-image-preview": "^4.6.12",
@@ -93,6 +94,7 @@
     "simplebar-react": "^3.2.4",
     "swiper": "^11.0.6",
     "web-vitals": "^3.5.2",
+    "xlsx": "^0.18.5",
     "yet-another-react-lightbox": "^3.17.0",
     "yup": "^1.3.3"
   },
