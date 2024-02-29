@@ -510,7 +510,7 @@
 
     &[data-sidebar-size="sm"] {
         @media (min-width: 768px) {
-            min-height: 1400px;
+            min-height: 100vh;
 
             .main-content {
                 margin-left: var(--#{$prefix}vertical-menu-width-sm);
@@ -837,7 +837,7 @@
 
                 #layout-wrapper,
                 .main-content {
-                    min-height: 1400px;
+                    min-height: 100vh;
                 }
             }
         }
