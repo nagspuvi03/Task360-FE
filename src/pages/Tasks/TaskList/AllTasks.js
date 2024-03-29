@@ -76,6 +76,8 @@ const AllTasks = () => {
         const projectsData = await projectsResponse.json();
         const customersData = await customersResponse.json();
 
+        console.log(usersData);
+
         setUsers(usersData);
         setProjects(projectsData);
         setCustomers(customersData);
